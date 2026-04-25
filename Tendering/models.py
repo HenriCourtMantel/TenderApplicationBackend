@@ -1,92 +1,78 @@
 from django.db import models
-import uuid
 from django.contrib.auth.models import AbstractUser
 
-# Create your models here.
+
+class Field(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.name
+
 
 class User(AbstractUser):
-    phone_number = models.CharField("User Phone Number", max_length=20, blank=True, null=True, unique=True)
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    gender = models.CharField(max_length=10, null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
+    company_name = models.CharField(max_length=255, blank=True, null=True)
+    cr_number = models.CharField(max_length=100, blank=True, null=True)
 
-    role = models.CharField(
-        "User Role",
-        choices=[("Admin", "admin"), ("Buyer", "buyer"), ("Seller", "seller")],
-        max_length=10
-    )
+    fields = models.ManyToManyField(Field, related_name="users")
 
-    verified = models.BooleanField("User Verfication Status", default=False)
+    def __str__(self):
+        return self.email
+
 
 class Tender(models.Model):
-    title = models.CharField("Tender Title", max_length=20)
-    description = models.TextField("Tender Description", max_length=500)
-    budget_min = models.DecimalField("Tender Minimum Budget", max_digits=12, decimal_places=2)
-    budget_max = models.DecimalField("Tender Maximum Budget", max_digits=12, decimal_places=2)
-    deadline = models.DateField("Tender Deadline")
-    status = models.CharField(
-        "Tender Status",
-        choices=[("Draft","draft"), ("Open", "open"), ("Closed", "closed")],
-        max_length=10
-    ) 
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-class TenderCategory(models.Model):
-    name = models.CharField("Category Name", max_length=20)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tenders")
+    title = models.CharField(max_length=255)
+    description = models.TextField()
 
-class TenderCategoryJunction(models.Model):
-    tender = models.ForeignKey(Tender, on_delete=models.CASCADE, verbose_name="Tender ID")
-    category = models.ForeignKey(TenderCategory, on_delete=models.CASCADE, verbose_name="Category ID")
+    currency = models.CharField(max_length=10)
+    budget_min = models.DecimalField(max_digits=10, decimal_places=2)
+    budget_max = models.DecimalField(max_digits=10, decimal_places=2)
 
-    class Meta:
-        unique_together = ('tender_id', 'category_id')
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+
+    issuing_org = models.CharField(max_length=255)
+    contact_info = models.TextField()
+    location = models.CharField(max_length=255)
+
+    document_url = models.URLField(blank=True, null=True)  
+    fields = models.ManyToManyField(Field, related_name="tenders")
+
+    def __str__(self):
+        return self.title
 
 
 class Bid(models.Model):
-    title = models.CharField("Bid Title", max_length=20)
-    proposal = models.TextField("Bid Proposal", max_length=500)
-    amount = models.DecimalField("Bid Amount", max_digits=12, decimal_places=2)
-    status = models.CharField(
-        "Bid Status",
-        choices=[("Draft","draft"), ("Submitted", "submitted"), ("Rejected", "rejected")],
-        max_length=10
-    ) 
-    submitted_at = models.DateTimeField(auto_now_add=True)
-    tender = models.ForeignKey(Tender, on_delete=models.CASCADE, verbose_name="Bidded Tender ID")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bids")
+    tender = models.ForeignKey(Tender, on_delete=models.CASCADE, related_name="bids")
 
-class BidDocument(models.Model):
-    bid = models.ForeignKey(Bid, on_delete=models.CASCADE,verbose_name="Bid ID")
-    file_name = models.CharField("Bid File Name", max_length=20)
-    file_path = models.CharField("Bid File Path", max_length=500)
+    creation_date = models.DateTimeField(auto_now_add=True)
 
-class Evaluation(models.Model):
-    tender = models.ForeignKey( Tender, on_delete=models.CASCADE, verbose_name="Evaluated Tender")
-    bid = models.ForeignKey( Bid, on_delete=models.CASCADE, verbose_name="Evaluated Bid")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Evaluator ID")
-    score = models.DecimalField("Evaluator Score", max_digits=5, decimal_places=2)
-    comments = models.TextField("Evaluator Comments", max_length=2500)
-    evaluated_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50)
+    approval_status = models.CharField(max_length=50)
 
-#messaging model:
-class Thread(models.Model):
-    thread_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    description = models.TextField()
+    document_url = models.URLField(blank=True, null=True)
 
-class Message(models.Model):
-    thread = models.ForeignKey(Thread, on_delete=models.CASCADE)
-    sent_date = models.DateTimeField(auto_now_add=True)
-    message_body = models.TextField("Message", max_length=5000)
-    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    cost_breakdown = models.TextField()
 
-class Participant(models.Model):
-    thread = models.ForeignKey(Thread, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    def __str__(self):
+        return f"Bid {self.id} - {self.tender.title}"
+
+
+class SavedTender(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="saved_tenders")
+    tender = models.ForeignKey(Tender, on_delete=models.CASCADE, related_name="saved_by")
+
+    saved_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('thread', 'user')
+        unique_together = ('user', 'tender')
 
-class MessageReadState(models.Model):
-    message = models.ForeignKey(Message, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    read_date = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('message', 'user')
-
+    def __str__(self):
+        return f"{self.user.email} saved {self.tender.title}"
