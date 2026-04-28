@@ -38,7 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
     birth_date = serializers.DateField(required=True, allow_null=True)
     first_name = serializers.CharField(required=True, allow_blank=True)
     last_name = serializers.CharField(required=True, allow_blank=True)
-    
+
     class Meta:
         model = User
         fields = '__all__'
@@ -65,9 +65,20 @@ class CurrencySerializer(serializers.ModelSerializer):
 from django.utils import timezone
 
 class TenderSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=True, allow_blank=False)
+    description = serializers.CharField(required=True, allow_blank=False)
+    budget_min = serializers.DecimalField(max_digits=15, decimal_places=2, required=True)
+    budget_max = serializers.DecimalField(max_digits=15, decimal_places=2, required=True)
+    start_date = serializers.DateTimeField(required=True)
+    deadline = serializers.DateTimeField(required=True)
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all(), required=True)
+    currency = serializers.PrimaryKeyRelatedField(queryset=Currency.objects.all(), required=True)
+    location = serializers.PrimaryKeyRelatedField(queryset=Location.objects.all(), required=True)
+    status = serializers.PrimaryKeyRelatedField(queryset=Status.objects.all(), required=True)
     class Meta:
         model = Tender
         fields = '__all__'
+        read_only_fields = ['user']
 
     def validate(self, data):
         if data['budget_min'] > data['budget_max']:
@@ -80,6 +91,10 @@ class TenderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Deadline must be in the future")
 
         return data
+    
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
     
 class TenderAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
