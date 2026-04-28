@@ -87,12 +87,8 @@ WSGI_APPLICATION = 'TenderingApplication.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.db.backends.sqlite3',
         'NAME': 'tender_system_db',
-        'USER': 'mhyar',
-        'PASSWORD': '1234',
-        'HOST': 'localhost',
-        'PORT': '5432',
     }
 }
 

@@ -1,4 +1,4 @@
-#!/home/henry/Documents/Coding/Django/TenderingApplication/.venv/bin/python3
+#!/home/henry/Documents/Coding/Django/TenderApplicationBackend/.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
