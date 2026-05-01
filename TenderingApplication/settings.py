@@ -25,7 +25,9 @@ SECRET_KEY = 'django-insecure-pi03)2tjpu5inkql(5e%oy2^(%d_$9_q^(1h+v%-#%vn!@^t_u
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [  '127.0.0.1',
+    'localhost',
+    '10.0.2.2',]
 
 
 # Application definition
@@ -37,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_filters',
     'rest_framework',
     'Tendering',
     'rest_framework.authtoken',
@@ -88,11 +91,11 @@ WSGI_APPLICATION = 'TenderingApplication.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tender_system_db',
-        'USER': 'mhyar',
+        'NAME': 'postgres',
+        'USER': 'postgres',
         'PASSWORD': '1234',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5433',
     }
 }
 

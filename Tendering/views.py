@@ -8,9 +8,13 @@ from rest_framework import status, permissions
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken 
 from .models import User
-
-# Create your views here.
-
+from rest_framework import viewsets, status, permissions
+from .models import User, Tender, Field
+from .serializers import UserSerializer, TenderSerializer, FieldSerializer
+from .models import Tender, Field, Bid, SavedTender
+from rest_framework import viewsets, filters
+from django_filters.rest_framework import DjangoFilterBackend
+from .serializers import TenderSerializer, FieldSerializer, BidSerializer, SavedTenderSerializer
 class RegisterView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -40,3 +44,24 @@ class LogoutView(APIView):
             return Response(
                 "User not logged in",
                 status=status.HTTP_400_BAD_REQUEST)
+            
+class TenderViewSet(viewsets.ModelViewSet):
+    queryset = Tender.objects.all()
+    serializer_class = TenderSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['title', 'description'] 
+    filterset_fields = {
+        'fields__name': ['exact', 'icontains'], 
+    }    
+
+class FieldViewSet(viewsets.ModelViewSet):
+    queryset = Field.objects.all()
+    serializer_class = FieldSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+class SavedTenderViewSet(viewsets.ModelViewSet):
+    queryset = SavedTender.objects.all()
+    serializer_class = SavedTenderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
