@@ -1,5 +1,31 @@
 from rest_framework import serializers
 from .models import Location, Category, Company, Tender, Bid, BidDocument, CategoryCompany, CategoryTender, TenderStatusHistory, BidStatusHistory, Status, User, Currency, TenderAttachment
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.exceptions import AuthenticationFailed
+
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    username_field = User.EMAIL_FIELD  # tells Simple JWT to use email
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise AuthenticationFailed("No account found with this email.")
+
+        if not user.check_password(password):
+            raise AuthenticationFailed("Incorrect password.")
+
+        if not user.is_active:
+            raise AuthenticationFailed("This account is inactive.")
+
+        refresh = self.get_token(user)
+        return {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
 
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,6 +58,8 @@ class StatusSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
+    profile_picture = serializers.FileField(required=False, allow_null=True)
     phone = serializers.CharField(required=True, allow_blank=True)
     gender = serializers.CharField(required=True, allow_blank=True)
     cr_number = serializers.CharField(required=True, allow_blank=True)
@@ -107,6 +135,9 @@ class TenderAttachmentSerializer(serializers.ModelSerializer):
         return value
     
 class BidSerializer(serializers.ModelSerializer):
+    proposal = serializers.CharField(required = True, allow_blank = False)
+    status = serializers.PrimaryKeyRelatedField(queryset=Status.objects.all(), required=True)
+    
     class Meta:
         model = Bid
         fields = '__all__'

@@ -36,6 +36,8 @@ class Status(models.Model):
         return self.name
 
 class User(AbstractUser):
+    email = models.EmailField(unique=True)
+    profile_picture = models.FileField(upload_to='profile_pictures/', null=True, blank=True)
     phone = models.CharField(max_length=20, null=False, blank=True)
     gender = models.CharField(max_length=10, null=False, blank=True)
     birth_date = models.DateField(null=False, blank=True)

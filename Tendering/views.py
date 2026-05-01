@@ -3,13 +3,17 @@ from rest_framework.authentication import SessionAuthentication, BasicAuthentica
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import TenderSerializer, UserSerializer
+from .serializers import EmailTokenObtainPairSerializer, TenderSerializer, UserSerializer, BidSerializer
 from rest_framework import status, permissions, mixins, generics, viewsets
 from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.tokens import RefreshToken 
-from .models import User, Tender
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .models import Bid, User, Tender
 
 # Create your views here.
+class EmailTokenObtainPairView(TokenObtainPairView):
+    serializer_class = EmailTokenObtainPairSerializer
+
 
 class RegisterView(APIView):
     def post(self, request):
@@ -117,3 +121,41 @@ class TenderDetail(
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
     
+class BidList(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    generics.GenericAPIView
+):
+    permission_classes = [IsAuthenticated]
+    queryset = Bid.objects.all()
+    serializer_class = BidSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+class BidDetail(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    generics.GenericAPIView
+):
+    permission_classes = [IsAuthenticated]
+    queryset = Bid.objects.all()
+    serializer_class = BidSerializer
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
