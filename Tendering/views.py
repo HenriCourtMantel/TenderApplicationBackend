@@ -1,20 +1,19 @@
-from django.shortcuts import render
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import UserSerializer
-from rest_framework import status, permissions
-from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.tokens import RefreshToken 
-from .models import User
-from rest_framework import viewsets, status, permissions
-from .models import User, Tender, Field
-from .serializers import UserSerializer, TenderSerializer, FieldSerializer
-from .models import Tender, Field, Bid, SavedTender
-from rest_framework import viewsets, filters
+from .serializers import *
+from rest_framework import status, viewsets
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .models import *
 from django_filters.rest_framework import DjangoFilterBackend
-from .serializers import TenderSerializer, FieldSerializer, BidSerializer, SavedTenderSerializer
+from rest_framework import filters
+
+# Create your views here.
+class EmailTokenObtainPairView(TokenObtainPairView):
+    serializer_class = EmailTokenObtainPairSerializer
+
+
 class RegisterView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -44,24 +43,75 @@ class LogoutView(APIView):
             return Response(
                 "User not logged in",
                 status=status.HTTP_400_BAD_REQUEST)
-            
+        
+
+class UserViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['first_name', 'last_name', 'email', 'company__company_name']
+    filterset_fields = {
+        'gender': ['exact'],
+        'company__company_name': ['exact', 'icontains'],
+        'company__location__city': ['exact', 'icontains'],
+    }
+
 class TenderViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Tender.objects.all()
     serializer_class = TenderSerializer
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['title', 'description'] 
     filterset_fields = {
-        'fields__name': ['exact', 'icontains'], 
+        'category__name': ['exact', 'icontains'],
+        'status__name': ['exact'],
+        'location__city': ['exact', 'icontains'],
+        'location__state': ['exact', 'icontains'],
+        'location__street': ['exact', 'icontains'],
+        'user__company__company_name': ['exact', 'icontains'],
     }    
 
-class FieldViewSet(viewsets.ModelViewSet):
-    queryset = Field.objects.all()
-    serializer_class = FieldSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    
-class SavedTenderViewSet(viewsets.ModelViewSet):
-    queryset = SavedTender.objects.all()
-    serializer_class = SavedTenderSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+class BidViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = Bid.objects.all()
+    serializer_class = BidSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['title', 'proposal']
+    filterset_fields = {
+        'tender__title': ['exact', 'icontains'],
+        'tender__description': ['exact', 'icontains'],
+        'tender__category__name': ['exact', 'icontains'],
+        'tender__status': ['exact'],
+        'tender__location__city': ['exact', 'icontains'],
+        'tender__location__state': ['exact', 'icontains'],
+        'tender__location__street': ['exact', 'icontains'],
+        'tender__user__company__company_name': ['exact', 'icontains'],
+        'total_price': ['exact', 'lt', 'gt'],
+    }
+
+#Read-only viewsets for categories, statuses, currencies, and locations
+#used to populate dropdowns in the frontend and should not be modified by users
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get']
+
+class StatusViewSet(viewsets.ModelViewSet):
+    queryset = Status.objects.all()
+    serializer_class = StatusSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get']
+
+class CurrencyViewSet(viewsets.ModelViewSet):
+    queryset = Currency.objects.all()
+    serializer_class = CurrencySerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get']
+
+class LocationViewSet(viewsets.ModelViewSet):
+    queryset = Location.objects.all()
+    serializer_class = LocationSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get']

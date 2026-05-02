@@ -39,12 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_filters',
     'rest_framework',
     'Tendering',
     'rest_framework.authtoken',
-    "rest_framework_simplejwt.token_blacklist"
-]
+    'rest_framework_simplejwt.token_blacklist',
+    'faker',
+    'django_filters'
+] 
 
 AUTH_USER_MODEL = 'Tendering.User'
     
@@ -91,13 +92,21 @@ WSGI_APPLICATION = 'TenderingApplication.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': '1234',
+        'NAME': 'tenderapp',
+        'USER': 'henry',
+        'PASSWORD': '123123123',
         'HOST': 'localhost',
-        'PORT': '5433',
+        'PORT': '5432',
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 
 
 # Password validation
