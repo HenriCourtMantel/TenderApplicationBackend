@@ -77,6 +77,25 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_cr_number(self, value):
         if value and len(value) < 5:
             raise serializers.ValidationError("CR number too short")
+        if User.objects.filter(cr_number=value).exists():
+            raise serializers.ValidationError("CR number already in use")
+        return value
+    
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email already in use")
+        return value
+    
+    def validate_phone(self, value):
+        if value and len(value) < 10:
+            raise serializers.ValidationError("Phone number too short")
+        if User.objects.filter(phone=value).exists():
+            raise serializers.ValidationError("Phone number already in use")
+        return value
+    
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username already in use")
         return value
 
     def create(self, validated_data):
