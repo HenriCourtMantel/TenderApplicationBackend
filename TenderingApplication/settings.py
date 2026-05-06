@@ -92,11 +92,11 @@ WSGI_APPLICATION = 'TenderingApplication.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tenderapp',
-        'USER': 'henry',
-        'PASSWORD': '123123123',
+        'NAME': 'tendering_db',
+        'USER': 'postgres',
+        'PASSWORD': '1234',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5433',
     }
 }
 
