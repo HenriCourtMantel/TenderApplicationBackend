@@ -1,7 +1,5 @@
 from rest_framework import serializers
-from django.utils import timezone
-from django.db.models import Q
-
+from .models import Location, Category, Company, Tender, Bid, BidDocument, CategoryCompany, CategoryTender, TenderStatusHistory, BidStatusHistory, Status, User, Currency, TenderAttachment
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -9,7 +7,7 @@ from .models import *
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
-    username_field = User.EMAIL_FIELD
+    username_field = User.EMAIL_FIELD  # tells Simple JWT to use email
 
     def validate(self, attrs):
         identifier = attrs.get("email")
@@ -212,4 +210,14 @@ class TenderStatusHistorySerializer(serializers.ModelSerializer):
 class BidStatusHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = BidStatusHistory
+        fields = '__all__'
+        
+class SavedTenderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SavedTender
+        fields = '__all__'
+
+class EvaluationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Evaluation
         fields = '__all__'

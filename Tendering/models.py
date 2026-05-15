@@ -89,7 +89,7 @@ class Tender(models.Model):
 
     title = models.CharField(max_length=255)
     description = models.TextField()
-
+    is_approved = models.BooleanField(default=False) 
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
     currency = models.ForeignKey(
@@ -110,18 +110,8 @@ class Tender(models.Model):
     start_date = models.DateTimeField()
     deadline = models.DateTimeField()
 
-    location = models.ForeignKey(
-        Location,
-        on_delete=models.CASCADE
-    )
-
-    status = models.ForeignKey(
-        Status,
-        on_delete=models.CASCADE
-    )
-
-    # NEW
-    is_approved = models.BooleanField(default=False)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE)
+    status = models.ForeignKey(Status, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.title
@@ -323,4 +313,4 @@ class BidStatusHistory(models.Model):
     )
 
     def __str__(self):
-        return f"{self.bid.title} - {self.status.name}"
+        return f"Bid by {self.bid.user.email} for {self.bid.tender.title} - {self.status.name} at {self.changed_at}"
