@@ -7,44 +7,36 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-
+from rest_framework.permissions import AllowAny
 from .serializers import *
 from .models import *
 
 
 class EmailTokenObtainPairView(TokenObtainPairView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
     serializer_class = EmailTokenObtainPairSerializer
 
 
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request):
-
         serializer = UserSerializer(data=request.data)
 
         if serializer.is_valid():
-
-            user: User = serializer.save()
+            user = serializer.save()
 
             refresh = RefreshToken.for_user(user)
 
             return Response({
-
-                'message': 'Account created and pending admin approval.',
-
                 'refresh': str(refresh),
-
                 'access': str(refresh.access_token),
-
                 'user': UserSerializer(user).data
-
             }, status=status.HTTP_201_CREATED)
 
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(APIView):
 

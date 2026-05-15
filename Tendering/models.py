@@ -44,7 +44,7 @@ class User(AbstractUser):
 
     phone = models.CharField(max_length=20, null=False, blank=True)
     gender = models.CharField(max_length=10, null=False, blank=True)
-    birth_date = models.DateField(null=False, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
 
     company = models.ForeignKey(
         Company,
@@ -60,7 +60,6 @@ class User(AbstractUser):
         unique=True
     )
 
-    # NEW
     is_verified = models.BooleanField(default=False)
 
     verification_document = models.FileField(
