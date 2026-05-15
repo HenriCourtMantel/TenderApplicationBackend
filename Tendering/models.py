@@ -79,7 +79,7 @@ class Tender(models.Model):
 
     location = models.ForeignKey(Location, on_delete=models.CASCADE)
     status = models.ForeignKey(Status, on_delete=models.CASCADE)
-
+    is_approved = models.BooleanField(default=False)
     def __str__(self):
         return self.title
 
@@ -144,3 +144,24 @@ class BidStatusHistory(models.Model):
 
     def __str__(self):
         return f"Bid by {self.bid.user.email} for {self.bid.tender.title} - {self.status.name} at {self.changed_at}"
+    
+    
+class SavedTender(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="saved_tenders")
+    tender = models.ForeignKey(Tender, on_delete=models.CASCADE)
+    saved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'tender')
+
+    def __str__(self):
+        return f"{self.user.email} saved {self.tender.title}"
+class Evaluation(models.Model):
+    bid = models.OneToOneField(Bid, on_delete=models.CASCADE, related_name="evaluation")
+    score = models.IntegerField()
+    comments = models.TextField()
+    evaluated_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Evaluation for Bid {self.bid.id} - Score: {self.score}"
