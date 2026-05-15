@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status, viewsets, filters
@@ -70,7 +70,8 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
 
     serializer_class = UserSerializer
-
+    def get_queryset(self):
+        return User.objects.filter(id=self.request.user.id)
     filter_backends = [
         filters.SearchFilter,
         DjangoFilterBackend
@@ -82,14 +83,14 @@ class UserViewSet(viewsets.ModelViewSet):
         'email'
     ]
 
-
+class IsVerifiedUser(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_verified)
 class TenderViewSet(viewsets.ModelViewSet):
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerifiedUser]
 
-    queryset = Tender.objects.filter(
-        is_approved=True
-    )
+    queryset = Tender.objects.all()
 
     serializer_class = TenderSerializer
 

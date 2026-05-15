@@ -89,7 +89,7 @@ class Tender(models.Model):
 
     title = models.CharField(max_length=255)
     description = models.TextField()
-    is_approved = models.BooleanField(default=False) 
+    is_approved = models.BooleanField(default=True) 
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
     currency = models.ForeignKey(

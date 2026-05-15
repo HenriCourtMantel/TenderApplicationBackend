@@ -10,9 +10,10 @@ from .models import *
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
-    username_field = User.EMAIL_FIELD  # tells Simple JWT to use email
+    username_field = User.EMAIL_FIELD  
 
     def validate(self, attrs):
+        # This part handles the email/phone and password check
         identifier = attrs.get("email")
         password = attrs.get("password")
 
@@ -21,35 +22,25 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
                 Q(email=identifier) |
                 Q(phone=identifier)
             )
-
         except User.DoesNotExist:
-            raise AuthenticationFailed(
-                "No account found."
-            )
+            raise AuthenticationFailed("No account found.")
 
         if not user.check_password(password):
-            raise AuthenticationFailed(
-                "Incorrect password."
-            )
+            raise AuthenticationFailed("Incorrect password.")
 
         if not user.is_active:
-            raise AuthenticationFailed(
-                "This account is inactive."
-            )
+            raise AuthenticationFailed("This account is inactive.")
 
-        if not user.is_verified:
-            raise AuthenticationFailed(
-                "Your account is pending admin approval."
-            )
+   
 
         refresh = self.get_token(user)
 
         return {
             "refresh": str(refresh),
             "access": str(refresh.access_token),
+            "is_verified": user.is_verified,
+            "user_id": user.id              
         }
-
-
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
@@ -136,7 +127,7 @@ class TenderSerializer(serializers.ModelSerializer):
 
         validated_data['user'] = self.context['request'].user
 
-        validated_data['is_approved'] = False
+        validated_data['is_approved'] = True
 
         return super().create(validated_data)
 
