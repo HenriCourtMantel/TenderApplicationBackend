@@ -1,7 +1,10 @@
+from datetime import timezone
+
 from rest_framework import serializers
 from .models import Location, Category, Company, Tender, Bid, BidDocument, CategoryCompany, CategoryTender, TenderStatusHistory, BidStatusHistory, Status, User, Currency, TenderAttachment
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
+from django.db.models import Q
 
 from .models import *
 
