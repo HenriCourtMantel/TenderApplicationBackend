@@ -1,4 +1,4 @@
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status, viewsets, filters
@@ -190,3 +190,40 @@ class LocationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     http_method_names = ['get']
+
+
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+
+class AcceptBidView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, bid_id):
+
+        try:
+            bid = Bid.objects.get(id=bid_id)
+
+        except Bid.DoesNotExist:
+            return Response(
+                {"error": "Bid not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # check if current user owns the tender
+        if bid.tender.user != request.user:
+            return Response(
+                {"error": "You do not own this tender"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        accepted_status = Status.objects.get(name="Awarded")
+
+        bid.status = accepted_status
+        bid.save()
+
+        return Response({
+            "message": "Bid accepted"
+        })
+    

@@ -18,5 +18,6 @@ urlpatterns = [
     path('refresh/', TokenRefreshView.as_view()),
     path('sign-up/', RegisterView.as_view()),
     path('log-out/', LogoutView.as_view()),
+    path('bids/<int:bid_id>/accept/', AcceptBidView.as_view()),
     path('', include(router.urls)),  
 ]
