@@ -5,6 +5,7 @@ from .views import *
 
 router = DefaultRouter()
 router.register(r'tenders', TenderViewSet)
+router.register(r'saved-tenders', SavedTenderViewSet)
 router.register(r'bids', BidViewSet)
 router.register(r'users', UserViewSet)
 router.register(r'categories', CategoryViewSet)
