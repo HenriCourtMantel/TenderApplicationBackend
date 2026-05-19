@@ -21,3 +21,11 @@ urlpatterns = [
     path('bids/<int:bid_id>/accept/', AcceptBidView.as_view()),
     path('', include(router.urls)),  
 ]
+from django.urls import path
+from .views import *
+
+urlpatterns = [
+    path('check-password/', CheckPasswordView.as_view()),
+    path('change-password/', ChangePasswordView.as_view()),
+]
+router.register(r'tender-attachments', TenderAttachmentViewSet)

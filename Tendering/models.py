@@ -81,6 +81,7 @@ class Currency(models.Model):
 
 
 class Tender(models.Model):
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -88,9 +89,15 @@ class Tender(models.Model):
     )
 
     title = models.CharField(max_length=255)
+
     description = models.TextField()
-    is_approved = models.BooleanField(default=True) 
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+
+    is_approved = models.BooleanField(default=True)
+
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE
+    )
 
     currency = models.ForeignKey(
         Currency,
@@ -108,15 +115,23 @@ class Tender(models.Model):
     )
 
     start_date = models.DateTimeField()
+
     deadline = models.DateTimeField()
 
-    location = models.ForeignKey(Location, on_delete=models.CASCADE)
-    status = models.ForeignKey(Status, on_delete=models.CASCADE)
+    completion_deadline = models.DateTimeField()
+
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.CASCADE
+    )
+
+    status = models.ForeignKey(
+        Status,
+        on_delete=models.CASCADE
+    )
 
     def __str__(self):
         return self.title
-
-
 class TenderAttachment(models.Model):
     tender = models.ForeignKey(
         Tender,
@@ -142,6 +157,7 @@ class TenderAttachment(models.Model):
 
 
 class Bid(models.Model):
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -172,10 +188,48 @@ class Bid(models.Model):
         decimal_places=2
     )
 
+    # NEW FIELDS
+    execution_plan = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    deliverables = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    estimated_duration = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
+
+    company_name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
+
+    contact_person = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
+
+    contact_email = models.EmailField(
+        null=True,
+        blank=True
+    )
+
+    contact_phone = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True
+    )
+
     def __str__(self):
         return f"Bid by {self.user.email} for {self.tender.title}"
-
-
 class BidDocument(models.Model):
     bid = models.ForeignKey(
         Bid,
