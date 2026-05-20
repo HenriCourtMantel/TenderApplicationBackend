@@ -1,19 +1,15 @@
-from datetime import timezone
-
 from rest_framework import serializers
-from .models import Location, Category, Company, Tender, Bid, BidDocument, CategoryCompany, CategoryTender, TenderStatusHistory, BidStatusHistory, Status, User, Currency, TenderAttachment
+from .models import Location, Category, Company, Tender, Bid, BidDocument, CategoryCompany, CategoryTender, TenderStatusHistory, BidStatusHistory, Status, User, Currency, TenderAttachment, Notification
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
 from django.db.models import Q
-
 from .models import *
-
+from django.utils import timezone
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
-    username_field = User.EMAIL_FIELD  
+    username_field = User.EMAIL_FIELD  # tells Simple JWT to use email
 
     def validate(self, attrs):
-        # This part handles the email/phone and password check
         identifier = attrs.get("email")
         password = attrs.get("password")
 
@@ -22,54 +18,64 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
                 Q(email=identifier) |
                 Q(phone=identifier)
             )
+
         except User.DoesNotExist:
-            raise AuthenticationFailed("No account found.")
+            raise AuthenticationFailed(
+                "No account found."
+            )
 
         if not user.check_password(password):
-            raise AuthenticationFailed("Incorrect password.")
+            raise AuthenticationFailed(
+                "Incorrect password."
+            )
 
         if not user.is_active:
-            raise AuthenticationFailed("This account is inactive.")
+            raise AuthenticationFailed(
+                "This account is inactive."
+            )
 
-   
+        if not user.is_verified:
+            raise AuthenticationFailed(
+                "Your account is pending admin approval."
+            )
 
         refresh = self.get_token(user)
 
         return {
             "refresh": str(refresh),
             "access": str(refresh.access_token),
-            "is_verified": user.is_verified,
-            "user_id": user.id              
         }
+
+
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
-        fields = '__all__'
+        fields = 'all'
 
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = 'all'
 
 
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
-        fields = '__all__'
+        fields = 'all'
 
 
 class StatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Status
-        fields = '__all__'
+        fields = 'all'
 
 
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = '__all__'
+        fields = 'all'
 
         extra_kwargs = {
             'password': {'write_only': True}
@@ -90,14 +96,29 @@ class UserSerializer(serializers.ModelSerializer):
 class CurrencySerializer(serializers.ModelSerializer):
     class Meta:
         model = Currency
-        fields = '__all__'
+        fields = 'all'
+
+
+
+
+class TenderAttachmentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = TenderAttachment
+        fields = 'all'
 
 
 class TenderSerializer(serializers.ModelSerializer):
 
+    attachments = TenderAttachmentSerializer(
+        many=True,
+        read_only=True
+    )
+
     class Meta:
         model = Tender
-        fields = '__all__'
+
+        fields = 'all'
 
         read_only_fields = [
             'user',
@@ -116,6 +137,11 @@ class TenderSerializer(serializers.ModelSerializer):
                 "Deadline must be after start date"
             )
 
+        if data['completion_deadline'] <= data['deadline']:
+            raise serializers.ValidationError(
+                "Completion deadline must be after applying deadline"
+            )
+
         if data['deadline'] <= timezone.now():
             raise serializers.ValidationError(
                 "Deadline must be in the future"
@@ -127,23 +153,20 @@ class TenderSerializer(serializers.ModelSerializer):
 
         validated_data['user'] = self.context['request'].user
 
-        validated_data['is_approved'] = True
+        validated_data['is_approved'] = False
 
         return super().create(validated_data)
-
-
-class TenderAttachmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TenderAttachment
-        fields = '__all__'
-
-
 class BidSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Bid
+
         fields = '__all__'
 
+        read_only_fields = [
+            'user',
+            'creation_date'
+        ]
     def validate_total_price(self, value):
 
         if value <= 0:
@@ -164,54 +187,65 @@ class BidSerializer(serializers.ModelSerializer):
 
         return data
 
+    def create(self, validated_data):
+
+        validated_data['user'] = self.context['request'].user
+
+        return super().create(validated_data)
 
 class BidDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = BidDocument
-        fields = '__all__'
+        fields = 'all'
 
 
 class SavedTenderSerializer(serializers.ModelSerializer):
     class Meta:
         model = SavedTender
-        fields = '__all__'
+        fields = 'all'
 
 
 class EvaluationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Evaluation
-        fields = '__all__'
+        fields = 'all'
 
 
 class CategoryCompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = CategoryCompany
-        fields = '__all__'
+        fields = 'all'
 
 
 class CategoryTenderSerializer(serializers.ModelSerializer):
     class Meta:
         model = CategoryTender
-        fields = '__all__'
+        fields = 'all'
 
 
 class TenderStatusHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = TenderStatusHistory
-        fields = '__all__'
+        fields = 'all'
 
 
 class BidStatusHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = BidStatusHistory
-        fields = '__all__'
+        fields = 'all'
         
 class SavedTenderSerializer(serializers.ModelSerializer):
     class Meta:
         model = SavedTender
-        fields = '__all__'
+        fields = 'all'
 
 class EvaluationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Evaluation
+        fields = 'all'
+
+class NotificationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Notification
         fields = '__all__'

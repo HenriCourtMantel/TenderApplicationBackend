@@ -110,7 +110,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'tendering_db',
         'USER': 'postgres',
-        'PASSWORD': '1234',
+        'PASSWORD': '1111',
         'HOST': 'localhost',
         'PORT': '5432',
     }

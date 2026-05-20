@@ -1,5 +1,6 @@
 from rest_framework.permissions import BasePermission, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework import status, viewsets, filters
 
@@ -128,6 +129,19 @@ class BidViewSet(viewsets.ModelViewSet):
         'title',
         'proposal'
     ]
+    def perform_create(self, serializer):
+        bid = serializer.save(user=self.request.user)
+
+        Notification.objects.create(
+            recipient=bid.tender.user,
+            sender=self.request.user,
+            notification_type="new_bid",
+            message=f'New bid submitted for "{bid.tender.title}"',
+
+            tender_title=bid.tender.title,
+            bid_title=bid.title
+        )
+        
 
 
 class SavedTenderViewSet(viewsets.ModelViewSet):
@@ -266,13 +280,122 @@ class AcceptBidView(APIView):
                 {"error": "You do not own this tender"},
                 status=status.HTTP_403_FORBIDDEN
             )
+        
+        if Bid.objects.filter(tender=bid.tender, status__name="Awarded").exists():
+            return Response({"error": "Tender already finalized"})
+        
+        if bid.status.name == "Rejected":
+            return Response({"error": "Cannot accept a rejected bid"})
+
+        if bid.status.name == "Awarded":
+            return Response({"error": "Bid already accepted"})
 
         accepted_status = Status.objects.get(name="Awarded")
 
         bid.status = accepted_status
         bid.save()
+        other_bids = Bid.objects.filter(
+            tender=bid.tender
+        ).exclude(id=bid.id)
+
+        other_bids.update(status=Status.objects.get(name="Rejected"))
+        
+        Notification.objects.create(
+            recipient=bid.user,
+            sender=request.user,
+            notification_type="bid_accepted",
+            message=f'Your bid for "{bid.tender.title}" was accepted.',
+            tender_title=bid.tender.title,
+            bid_title=bid.title
+        )
+      
+        
+        
+       
+        notifications = [
+            Notification(
+                recipient=b.user,
+                sender=request.user,
+                notification_type="bid_rejected",
+                message=f'Your bid for "{bid.tender.title}" was not selected.',
+                tender_title=b.tender.title,
+                bid_title=b.title
+            )
+            for b in other_bids
+        ]
+        Notification.objects.bulk_create(notifications)
+      
 
         return Response({
             "message": "Bid accepted"
         })
+
+
+class RejectBidView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, bid_id):
+
+        try:
+            bid = Bid.objects.get(id=bid_id)
+
+        except Bid.DoesNotExist:
+            return Response(
+                {"error": "Bid not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # check if current user owns the tender
+        if bid.tender.user != request.user:
+            return Response(
+                {"error": "You do not own this tender"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if Bid.objects.filter(tender=bid.tender, status__name="Awarded").exists():
+            return Response({"error": "Tender already finalized"})
+        
+        if bid.status.name == "Awarded":
+            return Response({"error": "Cannot reject an accepted bid"})
+        
+        if bid.status.name == "Rejected":
+            return Response({"error": "Bid already rejected"})
+        
+        
+        rejected_status = Status.objects.get(name="Rejected")
+        bid.status = rejected_status
+        
+        try:
+            Notification.objects.create(
+                recipient=bid.user,
+                sender=request.user,
+                notification_type="bid_rejected",
+                message=f'Your bid for "{bid.tender.title}" was rejected.',
+                tender_title=bid.tender.title,
+                bid_title=bid.title
+            )
+        except Exception as e:
+            print(e)
+            return Response({"error": str(e)})
+        
+        bid.save()
+
+
+        return Response({
+            "message": "Bid rejected"
+        })
+
+
+
+
+class NotificationViewSet(viewsets.ModelViewSet):
+
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Notification.objects.all()
+
+    def get_queryset(self):
+        return Notification.objects.filter(
+            recipient=self.request.user
+        ).order_by('-created_at')
     

@@ -12,6 +12,7 @@ router.register(r'categories', CategoryViewSet)
 router.register(r'statuses', StatusViewSet)
 router.register(r'currencies', CurrencyViewSet)
 router.register(r'locations', LocationViewSet)
+router.register(r'notifications', NotificationViewSet)
 
 urlpatterns = [
     path('login/', EmailTokenObtainPairView.as_view()),
@@ -19,13 +20,10 @@ urlpatterns = [
     path('sign-up/', RegisterView.as_view()),
     path('log-out/', LogoutView.as_view()),
     path('bids/<int:bid_id>/accept/', AcceptBidView.as_view()),
-    path('', include(router.urls)),  
-]
-from django.urls import path
-from .views import *
-
-urlpatterns = [
+    path('bids/<int:bid_id>/reject/', RejectBidView.as_view()),
     path('check-password/', CheckPasswordView.as_view()),
     path('change-password/', ChangePasswordView.as_view()),
+    path('', include(router.urls)),  
 ]
+
 router.register(r'tender-attachments', TenderAttachmentViewSet)

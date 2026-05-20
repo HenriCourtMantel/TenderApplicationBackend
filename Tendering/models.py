@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
+from datetime import timedelta
 
 
 class Location(models.Model):
@@ -118,7 +120,12 @@ class Tender(models.Model):
 
     deadline = models.DateTimeField()
 
-    completion_deadline = models.DateTimeField()
+    def default_completion_deadline():
+      return timezone.now() + timedelta(days=90)
+
+    completion_deadline = models.DateTimeField(
+        default=default_completion_deadline
+    )
 
     location = models.ForeignKey(
         Location,
@@ -368,3 +375,46 @@ class BidStatusHistory(models.Model):
 
     def __str__(self):
         return f"Bid by {self.bid.user.email} for {self.bid.tender.title} - {self.status.name} at {self.changed_at}"
+    
+
+
+class Notification(models.Model):
+
+    NOTIFICATION_TYPES = (
+        ('new_bid', 'New Bid'),
+        ('bid_accepted', 'Bid Accepted'),
+        ('bid_rejected', 'Bid Rejected'),
+    )
+
+    recipient = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='sent_notifications',
+        null=True,
+        blank=True
+    )
+
+    notification_type = models.CharField(
+        max_length=30,
+        choices=NOTIFICATION_TYPES
+    )
+
+    message = models.TextField()
+
+    is_read = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    tender_title = models.CharField(max_length=255, default="title")
+    bid_title = models.CharField(max_length=255, default="title")
+
+    
+
+    def __str__(self):
+        return f"{self.recipient} - {self.notification_type}"

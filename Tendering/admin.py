@@ -80,3 +80,7 @@ class TenderStatusHistoryAdmin(admin.ModelAdmin):
 @admin.register(BidStatusHistory)
 class BidStatusHistoryAdmin(admin.ModelAdmin):
     list_display = ['id', '__str__']
+
+@admin.register(Notification)
+class UserAdmin(admin.ModelAdmin):
+    list_display = ['id', '__str__']
