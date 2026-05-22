@@ -13,7 +13,7 @@ router.register(r'statuses', StatusViewSet)
 router.register(r'currencies', CurrencyViewSet)
 router.register(r'locations', LocationViewSet)
 router.register(r'notifications', NotificationViewSet)
-
+router.register(r'tender-attachments', TenderAttachmentViewSet)
 urlpatterns = [
     path('login/', EmailTokenObtainPairView.as_view()),
     path('refresh/', TokenRefreshView.as_view()),
@@ -26,4 +26,3 @@ urlpatterns = [
     path('', include(router.urls)),  
 ]
 
-router.register(r'tender-attachments', TenderAttachmentViewSet)

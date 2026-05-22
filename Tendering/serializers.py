@@ -42,40 +42,41 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         refresh = self.get_token(user)
 
         return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
-
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    "user_id": user.id,
+                    "is_verified": user.is_verified,
+                }
 
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
-        fields = 'all'
+        fields = '__all__'
 
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = 'all'
+        fields = '__all__'
 
 
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
-        fields = 'all'
+        fields = '__all__'
 
 
 class StatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Status
-        fields = 'all'
+        fields = '__all__'
 
 
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = 'all'
+        fields = '__all__'
 
         extra_kwargs = {
             'password': {'write_only': True}
@@ -96,7 +97,7 @@ class UserSerializer(serializers.ModelSerializer):
 class CurrencySerializer(serializers.ModelSerializer):
     class Meta:
         model = Currency
-        fields = 'all'
+        fields = '__all__'
 
 
 
@@ -105,7 +106,7 @@ class TenderAttachmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TenderAttachment
-        fields = 'all'
+        fields = '__all__'
 
 
 class TenderSerializer(serializers.ModelSerializer):
@@ -114,11 +115,11 @@ class TenderSerializer(serializers.ModelSerializer):
         many=True,
         read_only=True
     )
-
+    is_saved = serializers.SerializerMethodField()
     class Meta:
         model = Tender
 
-        fields = 'all'
+        fields = '__all__'
 
         read_only_fields = [
             'user',
@@ -156,6 +157,11 @@ class TenderSerializer(serializers.ModelSerializer):
         validated_data['is_approved'] = False
 
         return super().create(validated_data)
+    def get_is_saved(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return SavedTender.objects.filter(user=request.user, tender=obj).exists()
+        return False
 class BidSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -196,53 +202,59 @@ class BidSerializer(serializers.ModelSerializer):
 class BidDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = BidDocument
-        fields = 'all'
+        fields = '__all__'
 
 
 class SavedTenderSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
     class Meta:
         model = SavedTender
-        fields = 'all'
+        fields = ['id', 'user', 'tender']
+        validators = [] 
+
+    def create(self, validated_data):
+        saved_tender, created = SavedTender.objects.get_or_create(
+            user=validated_data['user'],
+            tender=validated_data['tender']
+        )
+        return saved_tender
 
 
 class EvaluationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Evaluation
-        fields = 'all'
+        fields = '__all__'
 
 
 class CategoryCompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = CategoryCompany
-        fields = 'all'
+        fields = '__all__'
 
 
 class CategoryTenderSerializer(serializers.ModelSerializer):
     class Meta:
         model = CategoryTender
-        fields = 'all'
+        fields = '__all__'
 
 
 class TenderStatusHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = TenderStatusHistory
-        fields = 'all'
+        fields = '__all__'
 
 
 class BidStatusHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = BidStatusHistory
-        fields = 'all'
+        fields = '__all__'
         
-class SavedTenderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SavedTender
-        fields = 'all'
 
 class EvaluationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Evaluation
-        fields = 'all'
+        fields = '__all__'
 
 class NotificationSerializer(serializers.ModelSerializer):
 

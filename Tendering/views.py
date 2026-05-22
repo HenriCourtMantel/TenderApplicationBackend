@@ -145,12 +145,23 @@ class BidViewSet(viewsets.ModelViewSet):
 
 
 class SavedTenderViewSet(viewsets.ModelViewSet):
-
     permission_classes = [IsAuthenticated]
-
     queryset = SavedTender.objects.all()
-
     serializer_class = SavedTenderSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        tender_id = kwargs.get('pk')
+        try:
+            # Look up the record by the logged-in user and the tender's ID
+            instance = SavedTender.objects.get(user=request.user, tender_id=tender_id)
+            self.perform_destroy(instance)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except SavedTender.DoesNotExist:
+            return Response(
+                {"error": "Saved tender record not found."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
 
 
 class EvaluationViewSet(viewsets.ModelViewSet):
