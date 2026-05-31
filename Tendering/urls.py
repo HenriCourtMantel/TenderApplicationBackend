@@ -14,6 +14,7 @@ router.register(r'currencies', CurrencyViewSet)
 router.register(r'locations', LocationViewSet)
 router.register(r'notifications', NotificationViewSet)
 router.register(r'tender-attachments', TenderAttachmentViewSet)
+
 urlpatterns = [
     path('login/', EmailTokenObtainPairView.as_view()),
     path('refresh/', TokenRefreshView.as_view()),
@@ -23,6 +24,10 @@ urlpatterns = [
     path('bids/<int:bid_id>/reject/', RejectBidView.as_view()),
     path('check-password/', CheckPasswordView.as_view()),
     path('change-password/', ChangePasswordView.as_view()),
+    
+    path('dashboard/', AdminDashboardView.as_view(), name='admin_dashboard'),
+    path('dashboard/verify-user/<int:user_id>/', VerifyUserHTMXView.as_view(), name='verify_user_htmx'),
+    path('dashboard/approve-tender/<int:tender_id>/', ApproveTenderHTMXView.as_view(), name='approve_tender_htmx'),
+    
     path('', include(router.urls)),  
 ]
-

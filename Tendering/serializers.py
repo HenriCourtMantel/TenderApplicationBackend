@@ -171,7 +171,8 @@ class BidSerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             'user',
-            'creation_date'
+            'creation_date',
+            'status'
         ]
     def validate_total_price(self, value):
 

@@ -3,15 +3,18 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework import status, viewsets, filters
-
 from django_filters.rest_framework import DjangoFilterBackend
-
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny
 from .serializers import *
 from .models import *
-
+from django.db.models import Count, Avg, Sum, Q
+from .models import User, Tender, Bid, Category, Status
+from django.shortcuts import render
+from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse
 
 class EmailTokenObtainPairView(TokenObtainPairView):
     permission_classes = [AllowAny]
@@ -38,6 +41,7 @@ class RegisterView(APIView):
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LogoutView(APIView):
 
@@ -67,12 +71,14 @@ class LogoutView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated]
-
     queryset = User.objects.all()
-
     serializer_class = UserSerializer
+
     def get_queryset(self):
+        if self.request.user.is_staff:
+            return User.objects.all()
         return User.objects.filter(id=self.request.user.id)
+
     filter_backends = [
         filters.SearchFilter,
         DjangoFilterBackend
@@ -84,16 +90,29 @@ class UserViewSet(viewsets.ModelViewSet):
         'email'
     ]
 
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def verify(self, request, pk=None):
+        user = self.get_object()
+        user.is_verified = True
+        user.save()
+        return Response({"status": "user verified"})
+
+
 class IsVerifiedUser(BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_verified)
+
+
 class TenderViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated, IsVerifiedUser]
-
     queryset = Tender.objects.all()
-
     serializer_class = TenderSerializer
+
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return Tender.objects.all()
+        return Tender.objects.filter(Q(is_approved=True) | Q(user=self.request.user))
 
     filter_backends = [
         filters.SearchFilter,
@@ -110,6 +129,13 @@ class TenderViewSet(viewsets.ModelViewSet):
         'location__city': ['exact', 'icontains'],
         'location__state': ['exact', 'icontains'],
     }
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def approve(self, request, pk=None):
+        tender = self.get_object()
+        tender.is_approved = True
+        tender.save()
+        return Response({"status": "tender approved"})
 
 
 class BidViewSet(viewsets.ModelViewSet):
@@ -129,8 +155,10 @@ class BidViewSet(viewsets.ModelViewSet):
         'title',
         'proposal'
     ]
+
     def perform_create(self, serializer):
-        bid = serializer.save(user=self.request.user)
+        pending_status = Status.objects.get(name="Pending")
+        bid = serializer.save(user=self.request.user, status=pending_status)
 
         Notification.objects.create(
             recipient=bid.tender.user,
@@ -141,7 +169,6 @@ class BidViewSet(viewsets.ModelViewSet):
             tender_title=bid.tender.title,
             bid_title=bid.title
         )
-        
 
 
 class SavedTenderViewSet(viewsets.ModelViewSet):
@@ -152,16 +179,14 @@ class SavedTenderViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         tender_id = kwargs.get('pk')
         try:
-            # Look up the record by the logged-in user and the tender's ID
             instance = SavedTender.objects.get(user=request.user, tender_id=tender_id)
             self.perform_destroy(instance)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except SavedTender.DoesNotExist:
             return Response(
-                {"error": "Saved tender record not found."}, 
+                {"error": "Saved tender record not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
-
 
 
 class EvaluationViewSet(viewsets.ModelViewSet):
@@ -217,10 +242,6 @@ class LocationViewSet(viewsets.ModelViewSet):
     http_method_names = ['get']
 
 
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
 class TenderAttachmentViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated]
@@ -253,6 +274,7 @@ class ChangePasswordView(APIView):
             status=status.HTTP_200_OK
         )
 
+
 class CheckPasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -269,8 +291,8 @@ class CheckPasswordView(APIView):
             {"valid": False, "message": "Password is incorrect"},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
-    
+
+
 class AcceptBidView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -285,16 +307,15 @@ class AcceptBidView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # check if current user owns the tender
         if bid.tender.user != request.user:
             return Response(
                 {"error": "You do not own this tender"},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         if Bid.objects.filter(tender=bid.tender, status__name="Awarded").exists():
             return Response({"error": "Tender already finalized"})
-        
+
         if bid.status.name == "Rejected":
             return Response({"error": "Cannot accept a rejected bid"})
 
@@ -310,7 +331,7 @@ class AcceptBidView(APIView):
         ).exclude(id=bid.id)
 
         other_bids.update(status=Status.objects.get(name="Rejected"))
-        
+
         Notification.objects.create(
             recipient=bid.user,
             sender=request.user,
@@ -319,10 +340,7 @@ class AcceptBidView(APIView):
             tender_title=bid.tender.title,
             bid_title=bid.title
         )
-      
-        
-        
-       
+
         notifications = [
             Notification(
                 recipient=b.user,
@@ -335,7 +353,6 @@ class AcceptBidView(APIView):
             for b in other_bids
         ]
         Notification.objects.bulk_create(notifications)
-      
 
         return Response({
             "message": "Bid accepted"
@@ -356,7 +373,6 @@ class RejectBidView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # check if current user owns the tender
         if bid.tender.user != request.user:
             return Response(
                 {"error": "You do not own this tender"},
@@ -365,17 +381,16 @@ class RejectBidView(APIView):
 
         if Bid.objects.filter(tender=bid.tender, status__name="Awarded").exists():
             return Response({"error": "Tender already finalized"})
-        
+
         if bid.status.name == "Awarded":
             return Response({"error": "Cannot reject an accepted bid"})
-        
+
         if bid.status.name == "Rejected":
             return Response({"error": "Bid already rejected"})
-        
-        
+
         rejected_status = Status.objects.get(name="Rejected")
         bid.status = rejected_status
-        
+
         try:
             Notification.objects.create(
                 recipient=bid.user,
@@ -386,17 +401,13 @@ class RejectBidView(APIView):
                 bid_title=bid.title
             )
         except Exception as e:
-            print(e)
             return Response({"error": str(e)})
-        
-        bid.save()
 
+        bid.save()
 
         return Response({
             "message": "Bid rejected"
         })
-
-
 
 
 class NotificationViewSet(viewsets.ModelViewSet):
@@ -409,4 +420,117 @@ class NotificationViewSet(viewsets.ModelViewSet):
         return Notification.objects.filter(
             recipient=self.request.user
         ).order_by('-created_at')
-    
+
+
+class DashboardAnalyticsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        total_users = User.objects.count()
+        unverified_users = User.objects.filter(is_verified=False).count()
+
+        total_tenders = Tender.objects.count()
+        pending_approval_tenders = Tender.objects.filter(is_approved=False).count()
+
+        total_bids = Bid.objects.count()
+
+        category_breakdown = Category.objects.annotate(
+            tender_count=Count('tender')
+        ).values('name', 'tender_count')
+
+        status_breakdown = Bid.objects.values('status__name').annotate(
+            count=Count('id')
+        )
+
+        avg_bid_value = Bid.objects.aggregate(avg_price=Avg('total_price'))['avg_price'] or 0
+        total_tender_budget = Tender.objects.aggregate(total_max=Sum('budget_max'))['total_max'] or 0
+
+        recent_tenders = Tender.objects.order_by('-start_date')[:5].values('id', 'title', 'start_date', 'is_approved')
+        recent_bids = Bid.objects.order_by('-creation_date')[:5].values('id', 'title', 'total_price', 'status__name')
+
+        return Response({
+            "metrics": {
+                "total_users": total_users,
+                "unverified_users": unverified_users,
+                "total_tenders": total_tenders,
+                "pending_approval_tenders": pending_approval_tenders,
+                "total_bids": total_bids,
+                "average_bid_value": round(float(avg_bid_value), 2),
+                "total_tender_budget": float(total_tender_budget),
+            },
+            "charts": {
+                "categories": list(category_breakdown),
+                "bid_statuses": list(status_breakdown),
+            },
+            "recent_activity": {
+                "tenders": list(recent_tenders),
+                "bids": list(recent_bids),
+            }
+        })
+        
+
+class AdminDashboardView(LoginRequiredMixin, View):
+    def get(self, request):
+        total_users = User.objects.count()
+        unverified_users = User.objects.filter(is_verified=False).count()
+        total_tenders = Tender.objects.count()
+        total_bids = Bid.objects.count()
+
+        pending_users = User.objects.filter(is_verified=False).select_related('company', 'company__location', 'company__category')
+        pending_tenders = Tender.objects.filter(is_approved=False).select_related('user', 'category', 'currency', 'location', 'status').prefetch_related('attachments')
+        awarded_bids = Bid.objects.filter(status__name="Awarded").select_related('tender', 'tender__user', 'tender__currency', 'user')
+        pending_bids = Bid.objects.filter(status__name="Pending").select_related('tender', 'tender__currency', 'user')
+
+        categories = Category.objects.annotate(count=Count('tender'))
+        category_names = [c.name for c in categories]
+        category_counts = [c.count for c in categories]
+
+        bid_statuses = Bid.objects.values('status__name').annotate(count=Count('id'))
+        status_names = [item['status__name'] for item in bid_statuses]
+        status_counts = [item['count'] for item in bid_statuses]
+
+        context = {
+            "metrics": {
+                "total_users": total_users,
+                "unverified_users": unverified_users,
+                "total_tenders": total_tenders,
+                "total_bids": total_bids,
+            },
+            "pending_users": pending_users,
+            "pending_tenders": pending_tenders,
+            "pending_bids": pending_bids,
+            "awarded_bids": awarded_bids,
+            "chart_data": {
+                "category_names": category_names,
+                "category_counts": category_counts,
+                "status_names": status_names,
+                "status_counts": status_counts,
+            }
+        }
+        return render(request, "dashboard.html", context)
+
+
+class VerifyUserHTMXView(LoginRequiredMixin, View):
+    def post(self, request, user_id):
+        if not request.user.is_staff:
+            return HttpResponse(status=403)
+        try:
+            user = User.objects.get(id=user_id)
+            user.is_verified = True
+            user.save()
+            return render(request, "partials/user_row_verified.html")
+        except User.DoesNotExist:
+            return HttpResponse(status=404)
+
+
+class ApproveTenderHTMXView(LoginRequiredMixin, View):
+    def post(self, request, tender_id):
+        if not request.user.is_staff:
+            return HttpResponse(status=403)
+        try:
+            tender = Tender.objects.get(id=tender_id)
+            tender.is_approved = True
+            tender.save()
+            return render(request, "partials/tender_row_approved.html")
+        except Tender.DoesNotExist:
+            return HttpResponse(status=404)

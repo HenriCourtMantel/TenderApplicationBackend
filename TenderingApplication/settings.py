@@ -100,7 +100,6 @@ TEMPLATES = [
         },
     },
 ]
-
 WSGI_APPLICATION = 'TenderingApplication.wsgi.application'
 
 
