@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import *
-
+from .views import SendOTPView, VerifyOTPView
 router = DefaultRouter()
 router.register(r'tenders', TenderViewSet)
 router.register(r'saved-tenders', SavedTenderViewSet)
@@ -28,6 +28,8 @@ urlpatterns = [
     path('dashboard/', AdminDashboardView.as_view(), name='admin_dashboard'),
     path('dashboard/verify-user/<int:user_id>/', VerifyUserHTMXView.as_view(), name='verify_user_htmx'),
     path('dashboard/approve-tender/<int:tender_id>/', ApproveTenderHTMXView.as_view(), name='approve_tender_htmx'),
-    
+    path('send-otp/', SendOTPView.as_view(), name='send-otp'),
+    path('verify-otp/', VerifyOTPView.as_view(), name='verify-otp'),
     path('', include(router.urls)),  
+    
 ]

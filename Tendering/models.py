@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from datetime import timedelta
-
+import random
 
 class Location(models.Model):
     street = models.CharField('street name', max_length=100)
@@ -378,6 +378,7 @@ class BidStatusHistory(models.Model):
     
 
 
+
 class Notification(models.Model):
 
     NOTIFICATION_TYPES = (
@@ -414,7 +415,26 @@ class Notification(models.Model):
     tender_title = models.CharField(max_length=255, default="title")
     bid_title = models.CharField(max_length=255, default="title")
 
-    
-
     def __str__(self):
         return f"{self.recipient} - {self.notification_type}"
+
+
+class OTP(models.Model):
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+    )
+
+    code = models.CharField(max_length=6)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    is_verified = models.BooleanField(default=False)
+
+    @staticmethod
+    def generate_code():
+        return str(random.randint(100000, 999999))
+
+    def __str__(self):
+        return f"{self.user.email} - {self.code}"

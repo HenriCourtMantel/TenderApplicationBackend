@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Location, Category, Company, Tender, Bid, BidDocument, CategoryCompany, CategoryTender, TenderStatusHistory, BidStatusHistory, Status, User, Currency, TenderAttachment, Notification
+from .models import Location, Category, Company, Tender, Bid, BidDocument, CategoryCompany, CategoryTender, TenderStatusHistory, BidStatusHistory, Status, User, Currency, TenderAttachment, Notification, OTP
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
 from django.db.models import Q
@@ -164,6 +164,21 @@ class TenderSerializer(serializers.ModelSerializer):
         return False
 class BidSerializer(serializers.ModelSerializer):
 
+    user_name = serializers.CharField(
+        source='user.username',
+        read_only=True
+    )
+
+    status_name = serializers.CharField(
+        source='status.name',
+        read_only=True
+    )
+
+    tender_title = serializers.CharField(
+        source='tender.title',
+        read_only=True
+    )
+
     class Meta:
         model = Bid
 
@@ -171,9 +186,9 @@ class BidSerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             'user',
-            'creation_date',
-            'status'
+            'creation_date'
         ]
+
     def validate_total_price(self, value):
 
         if value <= 0:
@@ -199,7 +214,6 @@ class BidSerializer(serializers.ModelSerializer):
         validated_data['user'] = self.context['request'].user
 
         return super().create(validated_data)
-
 class BidDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = BidDocument
@@ -261,4 +275,9 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Notification
+        fields = '__all__'
+class OTPSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OTP
         fields = '__all__'

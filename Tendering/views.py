@@ -15,6 +15,8 @@ from django.shortcuts import render
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
+from django.core.mail import send_mail
+from .models import OTP
 
 class EmailTokenObtainPairView(TokenObtainPairView):
     permission_classes = [AllowAny]
@@ -534,3 +536,76 @@ class ApproveTenderHTMXView(LoginRequiredMixin, View):
             return render(request, "partials/tender_row_approved.html")
         except Tender.DoesNotExist:
             return HttpResponse(status=404)
+        
+      
+
+class SendOTPView(APIView):
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+
+        email = request.data.get("email")
+
+        try:
+            user = User.objects.get(email=email)
+
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        code = OTP.generate_code()
+
+        OTP.objects.create(
+            user=user,
+            code=code
+        )
+
+        send_mail(
+            subject="Your OTP Code",
+            message=f"Your OTP code is: {code}",
+            from_email="your_email@gmail.com",
+            recipient_list=[email],
+            fail_silently=False
+        )
+
+        return Response({
+            "message": "OTP sent successfully"
+        })
+
+
+class VerifyOTPView(APIView):
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+
+        email = request.data.get("email")
+        code = request.data.get("code")
+
+        try:
+            user = User.objects.get(email=email)
+
+            otp = OTP.objects.filter(
+                user=user,
+                code=code,
+                is_verified=False
+            ).latest('created_at')
+
+        except Exception:
+            return Response(
+                {"error": "Invalid OTP"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        otp.is_verified = True
+        otp.save()
+
+        user.is_verified = True
+        user.save()
+
+        return Response({
+            "message": "OTP verified successfully"
+        })
