@@ -101,7 +101,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class IsVerifiedUser(BasePermission):
-    def h_permission(self, request, view):
+    def has_permission(self, request, view):
         return bool(request.user and request.user.is_verified)
 
 
@@ -133,8 +133,8 @@ class TenderViewSet(viewsets.ModelViewSet):
 
         if results == 'true':
             return queryset.filter(
-                Q(is_approved=True) & 
-                (Q(status__name__in=["Awarded", "Closed"]) | Q(deadline__lte=timezone.now()))
+                is_approved=True,
+                status__name="Awarded"
             ).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
 
         if user.is_staff:
