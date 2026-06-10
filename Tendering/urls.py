@@ -3,10 +3,12 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import *
 from .views import SendOTPView, VerifyOTPView
+
 router = DefaultRouter()
 router.register(r'tenders', TenderViewSet)
 router.register(r'saved-tenders', SavedTenderViewSet)
 router.register(r'bids', BidViewSet)
+router.register(r'bid-documents', BidDocumentViewSet)
 router.register(r'users', UserViewSet)
 router.register(r'categories', CategoryViewSet)
 router.register(r'statuses', StatusViewSet)
@@ -24,12 +26,12 @@ urlpatterns = [
     path('bids/<int:bid_id>/reject/', RejectBidView.as_view()),
     path('check-password/', CheckPasswordView.as_view()),
     path('change-password/', ChangePasswordView.as_view()),
-    
     path('dashboard/', AdminDashboardView.as_view(), name='admin_dashboard'),
     path('dashboard/verify-user/<int:user_id>/', VerifyUserHTMXView.as_view(), name='verify_user_htmx'),
+    path('dashboard/reject-user/<int:user_id>/', RejectUserHTMXView.as_view(), name='reject_user_htmx'),
     path('dashboard/approve-tender/<int:tender_id>/', ApproveTenderHTMXView.as_view(), name='approve_tender_htmx'),
+    path('dashboard/reject-tender/<int:tender_id>/', RejectTenderHTMXView.as_view(), name='reject_tender_htmx'),
     path('send-otp/', SendOTPView.as_view(), name='send-otp'),
     path('verify-otp/', VerifyOTPView.as_view(), name='verify-otp'),
     path('', include(router.urls)),  
-    
 ]

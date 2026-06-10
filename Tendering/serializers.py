@@ -216,7 +216,8 @@ class BidSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = [
             'user',
-            'creation_date'
+            'creation_date',
+            'status'
         ]
 
     def validate_total_price(self, value):
@@ -228,6 +229,14 @@ class BidSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         tender = data.get('tender')
+        request = self.context.get('request')
+
+        if tender and request and request.user:
+            if tender.user == request.user:
+                raise serializers.ValidationError(
+                    "You cannot submit a bid on your own tender"
+                )
+
         if tender and tender.deadline < timezone.now():
             raise serializers.ValidationError(
                 "Cannot bid on expired tender"
@@ -237,7 +246,6 @@ class BidSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
-
 
 class SavedTenderSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())

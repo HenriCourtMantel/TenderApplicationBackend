@@ -180,14 +180,24 @@
                             <h4 class="font-bold text-slate-900 text-base mt-2">{{ tender.title }}</h4>
                             <p class="text-xs text-slate-400 mt-1">Submitted by: {{ tender.user.email }}</p>
                         </div>
-                        <button 
-                            hx-post="/dashboard/approve-tender/{{ tender.id }}/" 
-                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                            hx-target="#tender-row-{{ tender.id }}" 
-                            hx-swap="outerHTML"
-                            class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors">
-                            Approve
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button 
+                                hx-post="/dashboard/approve-tender/{{ tender.id }}/" 
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-target="#tender-row-{{ tender.id }}" 
+                                hx-swap="outerHTML"
+                                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors">
+                                Approve
+                            </button>
+                            <button 
+                                hx-post="/dashboard/reject-tender/{{ tender.id }}/" 
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-target="#tender-row-{{ tender.id }}" 
+                                hx-swap="outerHTML"
+                                class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors">
+                                Reject
+                            </button>
+                        </div>
                     </div>
 
                     <p class="text-sm text-slate-600 mt-3 line-clamp-3 leading-relaxed">{{ tender.description }}</p>
@@ -241,14 +251,24 @@
                             </h4>
                             <p class="text-sm text-slate-400 mt-1">Username: {{ pending_user.username }}</p>
                         </div>
-                        <button 
-                            hx-post="/dashboard/verify-user/{{ pending_user.id }}/" 
-                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                            hx-target="#user-row-{{ pending_user.id }}" 
-                            hx-swap="outerHTML"
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold transition-colors">
-                            Verify Profile
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button 
+                                hx-post="/dashboard/verify-user/{{ pending_user.id }}/" 
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-target="#user-row-{{ pending_user.id }}" 
+                                hx-swap="outerHTML"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold transition-colors">
+                                Verify Profile
+                            </button>
+                            <button 
+                                hx-post="/dashboard/reject-user/{{ pending_user.id }}/" 
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-target="#user-row-{{ pending_user.id }}" 
+                                hx-swap="outerHTML"
+                                class="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold transition-colors">
+                                Reject
+                            </button>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">

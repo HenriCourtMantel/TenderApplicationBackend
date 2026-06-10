@@ -101,7 +101,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class IsVerifiedUser(BasePermission):
-    def has_permission(self, request, view):
+    def h_permission(self, request, view):
         return bool(request.user and request.user.is_verified)
 
 
@@ -140,7 +140,10 @@ class TenderViewSet(viewsets.ModelViewSet):
         if user.is_staff:
             return queryset.select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
             
-        return queryset.filter(Q(is_approved=True) | Q(user=user)).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
+        return queryset.filter(
+            is_approved=True,
+            deadline__gt=timezone.now()
+        ).exclude(status__name__in=["Awarded", "Closed"]).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
 
     @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def approve(self, request, pk=None):
@@ -148,6 +151,8 @@ class TenderViewSet(viewsets.ModelViewSet):
         tender.is_approved = True
         tender.save()
         return Response({"status": "tender approved"})
+
+
 class BidViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Bid.objects.all()
@@ -185,6 +190,13 @@ class BidViewSet(viewsets.ModelViewSet):
             tender_title=bid.tender.title,
             bid_title=bid.title
         )
+
+
+class BidDocumentViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = BidDocument.objects.all()
+    serializer_class = BidDocumentSerializer
+
 
 class SavedTenderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -489,6 +501,9 @@ class DashboardAnalyticsView(APIView):
 
 class AdminDashboardView(LoginRequiredMixin, View):
     def get(self, request):
+        if not request.user.is_staff:
+            return HttpResponse("Unauthorized", status=403)
+            
         total_users = User.objects.count()
         unverified_users = User.objects.filter(is_verified=False).count()
         total_tenders = Tender.objects.count()
@@ -541,6 +556,22 @@ class VerifyUserHTMXView(LoginRequiredMixin, View):
             return HttpResponse(status=404)
 
 
+class RejectUserHTMXView(LoginRequiredMixin, View):
+    def post(self, request, user_id):
+        if not request.user.is_staff:
+            return HttpResponse(status=403)
+        try:
+            user = User.objects.get(id=user_id)
+            company = user.company
+            if company:
+                company.delete()
+            else:
+                user.delete()
+            return HttpResponse("")
+        except User.DoesNotExist:
+            return HttpResponse(status=404)
+
+
 class ApproveTenderHTMXView(LoginRequiredMixin, View):
     def post(self, request, tender_id):
         if not request.user.is_staff:
@@ -552,8 +583,19 @@ class ApproveTenderHTMXView(LoginRequiredMixin, View):
             return render(request, "partials/tender_row_approved.html")
         except Tender.DoesNotExist:
             return HttpResponse(status=404)
-        
-      
+
+
+class RejectTenderHTMXView(LoginRequiredMixin, View):
+    def post(self, request, tender_id):
+        if not request.user.is_staff:
+            return HttpResponse(status=403)
+        try:
+            tender = Tender.objects.get(id=tender_id)
+            tender.delete()
+            return HttpResponse("")
+        except Tender.DoesNotExist:
+            return HttpResponse(status=404)
+
 
 class SendOTPView(APIView):
 
