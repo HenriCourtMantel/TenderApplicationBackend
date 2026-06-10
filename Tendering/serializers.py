@@ -116,18 +116,16 @@ class TenderSerializer(serializers.ModelSerializer):
         read_only=True
     )
     is_saved = serializers.SerializerMethodField()
+
     class Meta:
         model = Tender
-
         fields = '__all__'
-
         read_only_fields = [
             'user',
             'is_approved'
         ]
 
     def validate(self, data):
-
         if data['budget_min'] > data['budget_max']:
             raise serializers.ValidationError(
                 "Min budget cannot exceed max budget"
@@ -151,6 +149,31 @@ class TenderSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        validated_data['is_approved'] = False
+        return super().create(validated_data)
+
+    def get_is_saved(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return SavedTender.objects.filter(user=request.user, tender=obj).exists()
+        return False
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        
+        if instance.category:
+            representation['category'] = CategorySerializer(instance.category).data
+        if instance.currency:
+            representation['currency'] = CurrencySerializer(instance.currency).data
+        if instance.location:
+            representation['location'] = LocationSerializer(instance.location).data
+        if instance.status:
+            representation['status'] = StatusSerializer(instance.status).data
+            
+        return representation
+
+    def create(self, validated_data):
 
         validated_data['user'] = self.context['request'].user
 
@@ -162,8 +185,12 @@ class TenderSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return SavedTender.objects.filter(user=request.user, tender=obj).exists()
         return False
-class BidSerializer(serializers.ModelSerializer):
+class BidDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BidDocument
+        fields = '__all__'
 
+class BidSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(
         source='user.username',
         read_only=True
@@ -179,45 +206,37 @@ class BidSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    documents = BidDocumentSerializer(
+        many=True, 
+        read_only=True
+    )
+
     class Meta:
         model = Bid
-
         fields = '__all__'
-
         read_only_fields = [
             'user',
             'creation_date'
         ]
 
     def validate_total_price(self, value):
-
         if value <= 0:
             raise serializers.ValidationError(
                 "Total price must be positive"
             )
-
         return value
 
     def validate(self, data):
-
         tender = data.get('tender')
-
         if tender and tender.deadline < timezone.now():
             raise serializers.ValidationError(
                 "Cannot bid on expired tender"
             )
-
         return data
 
     def create(self, validated_data):
-
         validated_data['user'] = self.context['request'].user
-
         return super().create(validated_data)
-class BidDocumentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BidDocument
-        fields = '__all__'
 
 
 class SavedTenderSerializer(serializers.ModelSerializer):

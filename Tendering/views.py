@@ -106,15 +106,9 @@ class IsVerifiedUser(BasePermission):
 
 
 class TenderViewSet(viewsets.ModelViewSet):
-
     permission_classes = [IsAuthenticated, IsVerifiedUser]
     queryset = Tender.objects.all()
     serializer_class = TenderSerializer
-
-    def get_queryset(self):
-        if self.request.user.is_staff:
-            return Tender.objects.all()
-        return Tender.objects.filter(Q(is_approved=True) | Q(user=self.request.user))
 
     filter_backends = [
         filters.SearchFilter,
@@ -132,20 +126,31 @@ class TenderViewSet(viewsets.ModelViewSet):
         'location__state': ['exact', 'icontains'],
     }
 
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Tender.objects.all()
+        results = self.request.query_params.get('results')
+
+        if results == 'true':
+            return queryset.filter(
+                Q(is_approved=True) & 
+                (Q(status__name__in=["Awarded", "Closed"]) | Q(deadline__lte=timezone.now()))
+            ).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
+
+        if user.is_staff:
+            return queryset.select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
+            
+        return queryset.filter(Q(is_approved=True) | Q(user=user)).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
+
     @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def approve(self, request, pk=None):
         tender = self.get_object()
         tender.is_approved = True
         tender.save()
         return Response({"status": "tender approved"})
-
-
 class BidViewSet(viewsets.ModelViewSet):
-
     permission_classes = [IsAuthenticated]
-
     queryset = Bid.objects.all()
-
     serializer_class = BidSerializer
 
     filter_backends = [
@@ -158,8 +163,18 @@ class BidViewSet(viewsets.ModelViewSet):
         'proposal'
     ]
 
+    def get_queryset(self):
+        user = self.request.user
+        received = self.request.query_params.get('received')
+        if received == 'true':
+            return Bid.objects.filter(tender__user=user, status__name="Pending").select_related('tender', 'status', 'user').prefetch_related('documents')
+        
+        if user.is_staff:
+            return Bid.objects.all()
+        return Bid.objects.filter(user=user).select_related('tender', 'status', 'user').prefetch_related('documents')
+
     def perform_create(self, serializer):
-        pending_status = Status.objects.get(name="Pending")
+        pending_status, _ = Status.objects.get_or_create(name="Pending")
         bid = serializer.save(user=self.request.user, status=pending_status)
 
         Notification.objects.create(
@@ -167,11 +182,9 @@ class BidViewSet(viewsets.ModelViewSet):
             sender=self.request.user,
             notification_type="new_bid",
             message=f'New bid submitted for "{bid.tender.title}"',
-
             tender_title=bid.tender.title,
             bid_title=bid.title
         )
-
 
 class SavedTenderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -315,24 +328,26 @@ class AcceptBidView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        if Bid.objects.filter(tender=bid.tender, status__name="Awarded").exists():
+        awarded_status, _ = Status.objects.get_or_create(name="Awarded")
+        rejected_status, _ = Status.objects.get_or_create(name="Rejected")
+
+        if Bid.objects.filter(tender=bid.tender, status=awarded_status).exists():
             return Response({"error": "Tender already finalized"})
 
-        if bid.status.name == "Rejected":
+        if bid.status == rejected_status:
             return Response({"error": "Cannot accept a rejected bid"})
 
-        if bid.status.name == "Awarded":
+        if bid.status == awarded_status:
             return Response({"error": "Bid already accepted"})
 
-        accepted_status = Status.objects.get(name="Awarded")
-
-        bid.status = accepted_status
+        bid.status = awarded_status
         bid.save()
+
         other_bids = Bid.objects.filter(
             tender=bid.tender
         ).exclude(id=bid.id)
 
-        other_bids.update(status=Status.objects.get(name="Rejected"))
+        other_bids.update(status=rejected_status)
 
         Notification.objects.create(
             recipient=bid.user,
@@ -381,17 +396,20 @@ class RejectBidView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        if Bid.objects.filter(tender=bid.tender, status__name="Awarded").exists():
+        awarded_status, _ = Status.objects.get_or_create(name="Awarded")
+        rejected_status, _ = Status.objects.get_or_create(name="Rejected")
+
+        if Bid.objects.filter(tender=bid.tender, status=awarded_status).exists():
             return Response({"error": "Tender already finalized"})
 
-        if bid.status.name == "Awarded":
+        if bid.status == awarded_status:
             return Response({"error": "Cannot reject an accepted bid"})
 
-        if bid.status.name == "Rejected":
+        if bid.status == rejected_status:
             return Response({"error": "Bid already rejected"})
 
-        rejected_status = Status.objects.get(name="Rejected")
         bid.status = rejected_status
+        bid.save()
 
         try:
             Notification.objects.create(
@@ -404,8 +422,6 @@ class RejectBidView(APIView):
             )
         except Exception as e:
             return Response({"error": str(e)})
-
-        bid.save()
 
         return Response({
             "message": "Bid rejected"
