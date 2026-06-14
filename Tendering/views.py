@@ -17,7 +17,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.core.mail import send_mail
 from .models import OTP
-
+from django.conf import settings
 class EmailTokenObtainPairView(TokenObtainPairView):
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -629,12 +629,12 @@ class SendOTPView(APIView):
         )
 
         send_mail(
-            subject="Your OTP Code",
-            message=f"Your OTP code is: {code}",
-            from_email="your_email@gmail.com",
-            recipient_list=[email],
-            fail_silently=False
-        )
+    subject="Your OTP Code",
+    message=f"Your OTP code is: {code}",
+    from_email=settings.EMAIL_HOST_USER,
+    recipient_list=[email],
+    fail_silently=False
+)
 
         return Response({
             "message": "OTP sent successfully"
