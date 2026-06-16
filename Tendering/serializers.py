@@ -241,6 +241,10 @@ class BidSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Cannot bid on expired tender"
             )
+        if tender and tender.status.name == "Closed":
+          raise serializers.ValidationError(
+            "This tender is closed"
+        )
         return data
 
     def create(self, validated_data):

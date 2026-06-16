@@ -385,8 +385,8 @@ class Notification(models.Model):
         ('new_bid', 'New Bid'),
         ('bid_accepted', 'Bid Accepted'),
         ('bid_rejected', 'Bid Rejected'),
+        ('tender_approved', 'Tender Approved'),
     )
-
     recipient = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

@@ -150,15 +150,22 @@ class TenderViewSet(viewsets.ModelViewSet):
         ).select_related(
             'category', 'currency', 'location', 'status'
         ).prefetch_related('attachments')
-    
-    
-    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
-    def approve(self, request, pk=None):
-        tender = self.get_object()
-        tender.is_approved = True
-        tender.save()
-        return Response({"status": "tender approved"})
+@action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+def approve(self, request, pk=None):
+    tender = self.get_object()
 
+    tender.is_approved = True
+    tender.save()
+
+    Notification.objects.create(
+        recipient=tender.user,
+        sender=request.user,
+        notification_type='tender_approved',
+        message=f'Your tender "{tender.title}" has been approved.',
+        tender_title=tender.title
+    )
+
+    return Response({"status": "tender approved"})
 
 class BidViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -286,27 +293,50 @@ class TenderAttachmentViewSet(viewsets.ModelViewSet):
 
 
 class ChangePasswordView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        user = request.user
 
+        email = request.data.get("email")
         old_password = request.data.get("old_password")
+        otp_code = request.data.get("otp")
         new_password = request.data.get("new_password")
 
-        if not user.check_password(old_password):
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
             return Response(
-                {"error": "Old password is incorrect"},
+                {"error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        valid = False
+
+        if old_password and user.check_password(old_password):
+            valid = True
+
+        elif otp_code:
+            otp = OTP.objects.filter(
+                user=user,
+                code=otp_code,
+                is_verified=True
+            ).order_by('-created_at').first()
+
+            if otp:
+                valid = True
+
+        if not valid:
+            return Response(
+                {"error": "Invalid old password or OTP"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         user.set_password(new_password)
         user.save()
 
-        return Response(
-            {"message": "Password changed successfully"},
-            status=status.HTTP_200_OK
-        )
+        return Response({
+            "message": "Password changed successfully"
+        })
 
 
 class CheckPasswordView(APIView):
@@ -361,7 +391,12 @@ class AcceptBidView(APIView):
 
         bid.status = awarded_status
         bid.save()
-
+        closed_status,_ =status.object.get_or_create(
+            name="closed",
+            defaults={"description":"Tender closed"}
+        )
+        bid.tender.status = closed_status
+        bid.tender.save()
         other_bids = Bid.objects.filter(
             tender=bid.tender
         ).exclude(id=bid.id)
