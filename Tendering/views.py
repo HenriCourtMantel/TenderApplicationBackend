@@ -391,16 +391,17 @@ class AcceptBidView(APIView):
 
         bid.status = awarded_status
         bid.save()
-        closed_status,_ =status.object.get_or_create(
-            name="closed",
-            defaults={"description":"Tender closed"}
+
+        closed_status, _ =Status.objects.get_or_create(
+            name="Closed",
+            defaults={"description": "Tender closed"}
         )
         bid.tender.status = closed_status
         bid.tender.save()
         other_bids = Bid.objects.filter(
             tender=bid.tender
         ).exclude(id=bid.id)
-
+        
         other_bids.update(status=rejected_status)
 
         Notification.objects.create(
