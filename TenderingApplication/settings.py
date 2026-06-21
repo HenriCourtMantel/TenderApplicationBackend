@@ -40,13 +40,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders', 
     'rest_framework',
     'Tendering',
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
     'faker',
     'django_filters'
-] 
+]
 
 AUTH_USER_MODEL = 'Tendering.User'
     
@@ -75,6 +76,7 @@ SIMPLE_JWT = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -175,3 +177,21 @@ EMAIL_HOST_USER = 'your_email@gmail.com'
 EMAIL_HOST_PASSWORD = 'YOUR_APP_PASSWORD'
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# --- CORS SETTINGS FOR FLUTTER WEB ---
+
+CORS_ALLOW_ALL_ORIGINS = True  
+
+CORS_ALLOW_CREDENTIALS = True  
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
