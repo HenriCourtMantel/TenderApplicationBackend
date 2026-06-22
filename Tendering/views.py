@@ -141,15 +141,15 @@ class TenderViewSet(viewsets.ModelViewSet):
             return queryset.select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
             
         return queryset.filter(
-    is_approved=True,
-    deadline__gt=timezone.now()
-        ).exclude(
-            user=user
-        ).exclude(
-            status__name__in=["Awarded", "Closed"]
-        ).select_related(
-            'category', 'currency', 'location', 'status'
-        ).prefetch_related('attachments')
+            is_approved=True,
+            status__name="Open",
+            deadline__gt=timezone.now()
+                ).exclude(
+                    user=user
+                ).select_related(
+                    'category', 'currency', 'location', 'status'
+                ).prefetch_related('attachments', 'bids')
+        
 @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
 def approve(self, request, pk=None):
     tender = self.get_object()

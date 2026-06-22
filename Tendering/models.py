@@ -94,7 +94,7 @@ class Tender(models.Model):
 
     description = models.TextField()
 
-    is_approved = models.BooleanField(default=True)
+    is_approved = models.BooleanField(default=False)
 
     category = models.ForeignKey(
         Category,
@@ -139,6 +139,7 @@ class Tender(models.Model):
 
     def __str__(self):
         return self.title
+    
 class TenderAttachment(models.Model):
     tender = models.ForeignKey(
         Tender,
@@ -237,6 +238,7 @@ class Bid(models.Model):
 
     def __str__(self):
         return f"Bid by {self.user.email} for {self.tender.title}"
+    
 class BidDocument(models.Model):
     bid = models.ForeignKey(
         Bid,

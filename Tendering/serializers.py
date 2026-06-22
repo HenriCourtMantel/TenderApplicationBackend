@@ -100,14 +100,82 @@ class CurrencySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
-
 class TenderAttachmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TenderAttachment
         fields = '__all__'
 
+class BidDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BidDocument
+        fields = '__all__'
+
+class BidSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(
+        source='user.username',
+        read_only=True
+    )
+
+    status_name = serializers.CharField(
+        source='status.name',
+        read_only=True
+    )
+
+    tender_title = serializers.CharField(
+        source='tender.title',
+        read_only=True
+    )
+    
+    tender_owner_username = serializers.CharField(
+        source='tender.user.username',
+        read_only=True
+    )
+
+    documents = BidDocumentSerializer(
+        many=True, 
+        read_only=True
+    )
+
+    class Meta:
+        model = Bid
+        fields = '__all__'
+        read_only_fields = [
+            'user',
+            'creation_date',
+            'status'
+        ]
+
+    def validate_total_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError(
+                "Total price must be positive"
+            )
+        return value
+
+    def validate(self, data):
+        tender = data.get('tender')
+        request = self.context.get('request')
+
+        if tender and request and request.user:
+            if tender.user == request.user:
+                raise serializers.ValidationError(
+                    "You cannot submit a bid on your own tender"
+                )
+
+        if tender and tender.deadline < timezone.now():
+            raise serializers.ValidationError(
+                "Cannot bid on expired tender"
+            )
+        if tender and tender.status.name == "Closed":
+          raise serializers.ValidationError(
+            "This tender is closed"
+        )
+        return data
+
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
 
 class TenderSerializer(serializers.ModelSerializer):
 
@@ -115,6 +183,12 @@ class TenderSerializer(serializers.ModelSerializer):
         many=True,
         read_only=True
     )
+    
+    bids = BidSerializer(
+        many=True,
+        read_only=True,
+    )
+    
     is_saved = serializers.SerializerMethodField()
 
     class Meta:
@@ -180,76 +254,12 @@ class TenderSerializer(serializers.ModelSerializer):
         validated_data['is_approved'] = False
 
         return super().create(validated_data)
+    
     def get_is_saved(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return SavedTender.objects.filter(user=request.user, tender=obj).exists()
         return False
-class BidDocumentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BidDocument
-        fields = '__all__'
-
-class BidSerializer(serializers.ModelSerializer):
-    user_name = serializers.CharField(
-        source='user.username',
-        read_only=True
-    )
-
-    status_name = serializers.CharField(
-        source='status.name',
-        read_only=True
-    )
-
-    tender_title = serializers.CharField(
-        source='tender.title',
-        read_only=True
-    )
-
-    documents = BidDocumentSerializer(
-        many=True, 
-        read_only=True
-    )
-
-    class Meta:
-        model = Bid
-        fields = '__all__'
-        read_only_fields = [
-            'user',
-            'creation_date',
-            'status'
-        ]
-
-    def validate_total_price(self, value):
-        if value <= 0:
-            raise serializers.ValidationError(
-                "Total price must be positive"
-            )
-        return value
-
-    def validate(self, data):
-        tender = data.get('tender')
-        request = self.context.get('request')
-
-        if tender and request and request.user:
-            if tender.user == request.user:
-                raise serializers.ValidationError(
-                    "You cannot submit a bid on your own tender"
-                )
-
-        if tender and tender.deadline < timezone.now():
-            raise serializers.ValidationError(
-                "Cannot bid on expired tender"
-            )
-        if tender and tender.status.name == "Closed":
-          raise serializers.ValidationError(
-            "This tender is closed"
-        )
-        return data
-
-    def create(self, validated_data):
-        validated_data['user'] = self.context['request'].user
-        return super().create(validated_data)
 
 class SavedTenderSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
