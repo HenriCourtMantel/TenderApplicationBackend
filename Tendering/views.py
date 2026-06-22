@@ -18,6 +18,8 @@ from django.http import HttpResponse
 from django.core.mail import send_mail
 from .models import OTP
 from django.conf import settings
+from datetime import timedelta
+
 class EmailTokenObtainPairView(TokenObtainPairView):
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -149,6 +151,26 @@ class TenderViewSet(viewsets.ModelViewSet):
                 ).select_related(
                     'category', 'currency', 'location', 'status'
                 ).prefetch_related('attachments', 'bids')
+    @action(detail=False, methods=['get'], url_path='my-tenders')
+    def my_tenders(self, request):
+        user = request.user
+        tenders = Tender.objects.filter(user=user).select_related(
+            'category', 'currency', 'location', 'status'
+        ).prefetch_related(
+            'attachments',
+            'bids',              
+            'bids__user',     
+            'bids__status',     
+            'bids__documents'   
+        ).order_by('-start_date') 
+
+        page = self.paginate_queryset(tenders)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(tenders, many=True)
+        return Response(serializer.data)
         
 @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
 def approve(self, request, pk=None):
@@ -710,3 +732,140 @@ class VerifyOTPView(APIView):
         return Response({
             "message": "OTP verified successfully"
         })
+        
+
+class UserManagementView(LoginRequiredMixin, View):
+    def get(self, request):
+        if not request.user.is_staff:
+            return HttpResponse("Unauthorized", status=403)
+        users = User.objects.select_related('company', 'company__category').all().order_by('-date_joined')
+        return render(request, "users_management.html", {"users": users})
+
+class TenderManagementView(LoginRequiredMixin, View):
+    def get(self, request):
+        if not request.user.is_staff:
+            return HttpResponse("Unauthorized", status=403)
+        # Fetch all tenders optimized
+        tenders = Tender.objects.select_related('user', 'category', 'currency', 'status').all().order_by('-start_date')
+        return render(request, "tenders_management.html", {"tenders": tenders})
+
+
+class ToggleUserStatusHTMXView(LoginRequiredMixin, View):
+    def post(self, request, user_id):
+        if not request.user.is_staff:
+            return HttpResponse(status=403)
+        try:
+            user = User.objects.get(id=user_id)
+            if user == request.user:
+                return HttpResponse(status=400)
+            
+            user.is_active = not user.is_active
+            user.save()
+            return render(request, "partials/user_table_row.html", {"user": user})
+        except User.DoesNotExist:
+            return HttpResponse(status=404)
+
+
+class DeleteUserFromTableHTMXView(LoginRequiredMixin, View):
+    def post(self, request, user_id):
+        if not request.user.is_staff:
+            return HttpResponse(status=403)
+        try:
+            user = User.objects.get(id=user_id)
+            if user == request.user:
+                return HttpResponse(status=400)
+            user.delete()
+            return HttpResponse("") 
+        except User.DoesNotExist:
+            return HttpResponse(status=404)
+
+
+class DeleteTenderFromTableHTMXView(LoginRequiredMixin, View):
+    def post(self, request, tender_id):
+        if not request.user.is_staff:
+            return HttpResponse(status=403)
+        try:
+            tender = Tender.objects.get(id=tender_id)
+            tender.delete()
+            return HttpResponse("") 
+        except Tender.DoesNotExist:
+            return HttpResponse(status=404)
+        
+class BidManagementView(LoginRequiredMixin, View):
+    def get(self, request):
+        if not request.user.is_staff:
+            return HttpResponse("Unauthorized", status=403)
+        bids = Bid.objects.select_related(
+            'user', 
+            'tender', 
+            'tender__currency', 
+            'status'
+        ).all().order_by('-creation_date')
+        
+        return render(request, "bids_management.html", {"bids": bids})
+
+
+class DeleteBidFromTableHTMXView(LoginRequiredMixin, View):
+    def post(self, request, bid_id):
+        if not request.user.is_staff:
+            return HttpResponse(status=403)
+        try:
+            bid = Bid.objects.get(id=bid_id)
+            bid.delete()
+            return HttpResponse("") 
+        except Bid.DoesNotExist:
+            return HttpResponse(status=404)
+        
+class AdminNotificationBellView(LoginRequiredMixin, View):
+    def get(self, request):
+        if not request.user.is_staff:
+            return HttpResponse(status=403)
+        
+        pending_tenders_count = Tender.objects.filter(is_approved=False).count()
+        pending_users_count = User.objects.filter(is_verified=False).count()
+        
+        recent_bids_count = Bid.objects.filter(
+            creation_date__gte=timezone.now() - timedelta(days=1)
+        ).count()
+        
+        has_alerts = (pending_tenders_count + pending_users_count + recent_bids_count) > 0
+        
+        context = {
+            "pending_tenders_count": pending_tenders_count,
+            "pending_users_count": pending_users_count,
+            "recent_bids_count": recent_bids_count,
+            "has_alerts": has_alerts
+        }
+        return render(request, "partials/notification_bell.html", context)
+class TenderDetailModalView(LoginRequiredMixin, View):
+    def get(self, request, tender_id):
+        if not request.user.is_staff:
+            return HttpResponse(status=403)
+        
+        tender = Tender.objects.prefetch_related('attachments').select_related(
+            'user', 'category', 'currency', 'location', 'status'
+        ).get(id=tender_id)
+        
+        return render(request, "partials/tender_detail_modal.html", {"tender": tender})
+
+class BidDetailModalView(LoginRequiredMixin, View):
+    def get(self, request, bid_id):
+        if not request.user.is_staff:
+            return HttpResponse(status=403)
+        
+        bid = Bid.objects.prefetch_related('documents').select_related(
+            'user', 'tender', 'tender__currency', 'status'
+        ).get(id=bid_id)
+        
+        return render(request, "partials/bid_detail_modal.html", {"bid": bid})
+    
+class UserDetailModalView(LoginRequiredMixin, View):
+    def get(self, request, user_id):
+        if not request.user.is_staff:
+            return HttpResponse(status=403)
+        
+        user_obj = User.objects.select_related(
+            'company', 'company__location', 'company__category'
+        ).get(id=user_id)
+        
+        return render(request, "partials/user_detail_modal.html", {"user_obj": user_obj})

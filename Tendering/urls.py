@@ -38,6 +38,18 @@ urlpatterns = [
     path('send-otp/', SendOTPView.as_view(), name='send-otp'),
     path('verify-otp/', VerifyOTPView.as_view(), name='verify-otp'),
     path('', include(router.urls)),  
+    #for dashboard
+    path('dashboard/users/', UserManagementView.as_view(), name='admin_users'),
+    path('dashboard/tenders-management/', TenderManagementView.as_view(), name='admin_tenders'),
+    path('dashboard/users/<int:user_id>/toggle-status/', ToggleUserStatusHTMXView.as_view(), name='toggle_user_status'),
+    path('dashboard/users/<int:user_id>/delete/', DeleteUserFromTableHTMXView.as_view(), name='delete_user_table'),
+    path('dashboard/tenders-management/<int:tender_id>/delete/', DeleteTenderFromTableHTMXView.as_view(), name='delete_tender_table'),
+    path('dashboard/bids-management/', BidManagementView.as_view(), name='admin_bids'),
+    path('dashboard/bids-management/<int:bid_id>/delete/', DeleteBidFromTableHTMXView.as_view(), name='delete_bid_table'),
+    path('dashboard/notifications/bell/', AdminNotificationBellView.as_view(), name='admin_notifications'),
+    path('dashboard/tenders-management/<int:tender_id>/details/', TenderDetailModalView.as_view(), name='tender_details_modal'),
+    path('dashboard/bids-management/<int:bid_id>/details/', BidDetailModalView.as_view(), name='bid_details_modal'),
+      path('dashboard/users-management/<int:user_id>/details/', UserDetailModalView.as_view(), name='user_details_modal'),
 ]
 
 if settings.DEBUG:

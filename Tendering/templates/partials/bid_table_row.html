@@ -1,0 +1,50 @@
+<tr id="bid-row-{{ bid.id }}" class="hover:bg-slate-50 transition-colors">
+    <td class="py-4 px-6">
+        <p class="font-bold text-slate-900">{{ bid.title }}</p>
+        <p class="text-xs text-slate-500 mt-0.5">Submitted: {{ bid.creation_date|date:"M j, Y" }}</p>
+    </td>
+    <td class="py-4 px-6">
+        <p class="font-medium text-slate-900 truncate max-w-[200px]" title="{{ bid.tender.title }}">{{ bid.tender.title }}</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Tender ID: #{{ bid.tender.id }}</p>
+    </td>
+    <td class="py-4 px-6">
+        <p class="font-bold text-slate-900">{% if bid.company_name %}{{ bid.company_name }}{% else %}{{ bid.user.username }}{% endif %}</p>
+        <p class="text-xs text-slate-500 mt-0.5">{{ bid.contact_email|default:bid.user.email }}</p>
+    </td>
+    <td class="py-4 px-6">
+        <p>
+            <span class="font-bold text-slate-900">{{ bid.total_price }}</span>
+            <span class="text-xs font-semibold text-slate-500">{{ bid.tender.currency.code }}</span>
+        </p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Time: {{ bid.estimated_duration|default:"Not specified" }}</p>
+    </td>
+    <td class="py-4 px-6">
+        {% if bid.status.name == 'Pending' %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-[11px] font-bold tracking-wide uppercase border border-amber-200/50"><div class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>Pending</span>
+        {% elif bid.status.name == 'Awarded' %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-[11px] font-bold tracking-wide uppercase border border-emerald-200/50"><div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>Awarded</span>
+        {% elif bid.status.name == 'Rejected' %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 text-rose-700 rounded-md text-[11px] font-bold tracking-wide uppercase border border-rose-200/50"><div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>Rejected</span>
+        {% else %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-[11px] font-bold tracking-wide uppercase border border-slate-200/50">{{ bid.status.name }}</span>
+        {% endif %}
+    </td>
+<td class="py-4 px-6 text-right space-x-2">
+        <!-- View Details  -->
+        <button 
+            hx-get="/dashboard/bids-management/{{ bid.id }}/details/" 
+            hx-target="#modal-container"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors">
+            View Details
+        </button>
+        <!-- Delete Bid -->
+        <button 
+            hx-post="/dashboard/bids-management/{{ bid.id }}/delete/" 
+            hx-target="#bid-row-{{ bid.id }}" 
+            hx-swap="outerHTML"
+            hx-confirm="Are you sure you want to delete this bid? This cannot be undone."
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-rose-200 text-rose-700 hover:bg-rose-50 transition-colors">
+            Delete
+        </button>
+    </td>
+</tr>

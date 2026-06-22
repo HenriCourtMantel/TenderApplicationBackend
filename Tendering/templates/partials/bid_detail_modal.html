@@ -1,0 +1,71 @@
+<!-- Modal Overlay -->
+<div id="bid-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 opacity-100 transition-opacity">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-[fadeIn_0.2s_ease-out]">
+        
+        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h2 class="text-lg font-bold text-slate-900 tracking-tight">Bid Full Details</h2>
+            <button onclick="document.getElementById('modal-container').innerHTML = ''" class="text-slate-400 hover:text-slate-700 bg-white hover:bg-slate-100 rounded-full p-2 transition">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <div class="p-6 overflow-y-auto custom-scrollbar space-y-8">
+            <!-- Header Info -->
+            <div>
+                <p class="text-xs text-slate-500 font-semibold mb-1">Target Tender: <a href="#" class="text-blue-600 hover:underline">{{ bid.tender.title }}</a></p>
+                <h3 class="text-2xl font-bold text-slate-900">{{ bid.title }}</h3>
+                <p class="text-sm text-slate-500 mt-1">Agency: <span class="font-semibold text-slate-700">{% if bid.company_name %}{{ bid.company_name }}{% else %}{{ bid.user.username }}{% endif %}</span> ({{ bid.contact_email }})</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-5 bg-slate-50 rounded-xl border border-slate-100">
+                <div><p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Bid Status</p><p class="text-sm font-semibold text-slate-900">{{ bid.status.name }}</p></div>
+                <div><p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Proposed Price</p><p class="text-sm font-semibold text-emerald-600">{{ bid.total_price }} {{ bid.tender.currency.code }}</p></div>
+                <div><p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Est. Duration</p><p class="text-sm font-semibold text-slate-900">{{ bid.estimated_duration|default:"N/A" }}</p></div>
+                <div><p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Submitted On</p><p class="text-sm font-semibold text-slate-900">{{ bid.creation_date|date:"M j, Y" }}</p></div>
+            </div>
+
+            <!-- Text Fields -->
+            <div class="space-y-6">
+                <div>
+                    <h4 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2 border-b border-slate-100 pb-2">Main Proposal</h4>
+                    <div class="text-sm text-slate-700 leading-relaxed bg-white whitespace-pre-wrap">{{ bid.proposal }}</div>
+                </div>
+                {% if bid.execution_plan %}
+                <div>
+                    <h4 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2 border-b border-slate-100 pb-2">Execution Plan</h4>
+                    <div class="text-sm text-slate-700 leading-relaxed bg-white whitespace-pre-wrap">{{ bid.execution_plan }}</div>
+                </div>
+                {% endif %}
+                {% if bid.deliverables %}
+                <div>
+                    <h4 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2 border-b border-slate-100 pb-2">Key Deliverables</h4>
+                    <div class="text-sm text-slate-700 leading-relaxed bg-white whitespace-pre-wrap">{{ bid.deliverables }}</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Documents -->
+            <div>
+                <h4 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3 border-b border-slate-100 pb-2">Bid Documents ({{ bid.documents.count }})</h4>
+                {% if bid.documents.all %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% for doc in bid.documents.all %}
+                        <a href="{{ doc.file.url }}" download class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition group">
+                            <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            </div>
+                            <div class="overflow-hidden">
+                                <p class="text-sm font-semibold text-slate-900 truncate group-hover:text-emerald-700">{{ doc.file.name }}</p>
+                                <p class="text-xs text-slate-500">{{ doc.size }} bytes</p>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-sm text-slate-500 italic">No supporting documents uploaded.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

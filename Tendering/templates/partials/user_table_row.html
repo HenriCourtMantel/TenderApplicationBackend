@@ -1,0 +1,67 @@
+<tr id="user-row-{{ user.id }}" class="hover:bg-slate-50 transition-colors {% if not user.is_active %}bg-slate-50 opacity-70{% endif %}">
+    <td class="py-4 px-6">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full {% if user.is_staff %}bg-purple-100 text-purple-700{% else %}bg-blue-100 text-blue-700{% endif %} flex items-center justify-center font-bold text-sm">
+                {{ user.username|slice:":1"|upper }}
+            </div>
+            <div>
+                <p class="font-bold text-slate-900">{% if user.first_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.username }}{% endif %}</p>
+                <p class="text-xs text-slate-500 mt-0.5">{{ user.email }}</p>
+            </div>
+        </div>
+    </td>
+    <td class="py-4 px-6">
+        {% if user.company %}
+            <p class="font-bold text-slate-900">{{ user.company.company_name }}</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">CR: {{ user.company.cr_number }}</p>
+        {% else %}
+            <span class="text-xs text-slate-400 italic">No Company Profile</span>
+        {% endif %}
+    </td>
+    <td class="py-4 px-6">
+        {% if user.is_verified %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-[11px] font-bold tracking-wide uppercase border border-emerald-200/50"><div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>Verified</span>
+        {% else %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-[11px] font-bold tracking-wide uppercase border border-amber-200/50"><div class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>Pending</span>
+        {% endif %}
+    </td>
+    <td class="py-4 px-6">
+        {% if user.is_active %}
+            <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-bold">Active</span>
+        {% else %}
+            <span class="px-2 py-1 bg-rose-50 text-rose-700 rounded text-xs font-bold">Suspended</span>
+        {% endif %}
+    </td>
+    <td class="py-4 px-6 text-slate-500 text-xs">
+        {{ user.date_joined|date:"M j, Y" }}
+    </td>
+    <td class="py-4 px-6 text-right space-x-2">
+        
+        <!-- View User Details Modal Button -->
+        <button 
+            hx-get="/dashboard/users-management/{{ user.id }}/details/" 
+            hx-target="#modal-container"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors">
+            Details
+        </button>
+        
+        <!-- Toggle Active/Suspend Status -->
+        <button 
+            hx-post="/dashboard/users/{{ user.id }}/toggle-status/" 
+            hx-target="#user-row-{{ user.id }}" 
+            hx-swap="outerHTML"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border {% if user.is_active %}border-amber-200 text-amber-700 hover:bg-amber-50{% else %}border-emerald-200 text-emerald-700 hover:bg-emerald-50{% endif %}">
+            {% if user.is_active %}Suspend{% else %}Activate{% endif %}
+        </button>
+        
+        <!-- Delete -->
+        <button 
+            hx-post="/dashboard/users/{{ user.id }}/delete/" 
+            hx-target="#user-row-{{ user.id }}" 
+            hx-swap="outerHTML"
+            hx-confirm="Are you absolutely sure you want to permanently delete this user?"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-rose-200 text-rose-700 hover:bg-rose-50 transition-colors">
+            Delete
+        </button>
+    </td>
+</tr>

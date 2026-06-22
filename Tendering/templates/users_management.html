@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="p-8 max-w-[1600px] mx-auto space-y-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">User & Company Registry</h1>
+            <p class="text-sm text-slate-500 mt-1">Manage all registered accounts, verify statuses, and control platform access.</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse whitespace-nowrap">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th class="py-4 px-6">User Details</th>
+                        <th class="py-4 px-6">Company Profile</th>
+                        <th class="py-4 px-6">Verification</th>
+                        <th class="py-4 px-6">Status</th>
+                        <th class="py-4 px-6">Joined Date</th>
+                        <th class="py-4 px-6 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-sm">
+                    {% for user in users %}
+                        {% include 'partials/user_table_row.html' %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

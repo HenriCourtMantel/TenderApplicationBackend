@@ -1,0 +1,84 @@
+<!-- Adding tabindex="0" and focus-within allows it to open on click and close when clicking away! -->
+<div class="relative group" tabindex="0">
+    
+    <!-- Bell Icon -->
+    <button class="relative p-2 text-slate-400 group-focus-within:text-slate-700 transition-colors cursor-pointer outline-none">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+        </svg>
+        
+        {% if has_alerts %}
+        <!-- Pulsing Red Dot -->
+        <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+        <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-400 rounded-full animate-ping opacity-75"></span>
+        {% endif %}
+    </button>
+
+    <!-- Dropdown Menu (Shows when the bell is clicked/focused) -->
+    <div class="absolute right-0 mt-1 w-80 bg-white border border-slate-200 shadow-xl rounded-2xl opacity-0 invisible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200 z-50 transform origin-top-right">
+        
+        <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/80 rounded-t-2xl flex justify-between items-center">
+            <h3 class="text-sm font-bold text-slate-900">System Alerts</h3>
+            {% if has_alerts %}
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-rose-100 text-rose-700 rounded-full uppercase tracking-wide">Action Needed</span>
+            {% endif %}
+        </div>
+        
+        <div class="max-h-[350px] overflow-y-auto custom-scrollbar p-2 space-y-1">
+            
+            {% if pending_tenders_count > 0 %}
+            <a href="/dashboard/tenders-management/" class="block p-3 rounded-xl border border-transparent hover:border-amber-100 hover:bg-amber-50/50 transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-slate-900">Pending Tenders</p>
+                        <p class="text-xs text-slate-500 mt-0.5">{{ pending_tenders_count }} tender(s) await your approval.</p>
+                    </div>
+                </div>
+            </a>
+            {% endif %}
+            
+            {% if pending_users_count > 0 %}
+            <a href="/dashboard/users/" class="block p-3 rounded-xl border border-transparent hover:border-blue-100 hover:bg-blue-50/50 transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-slate-900">Unverified Users</p>
+                        <p class="text-xs text-slate-500 mt-0.5">{{ pending_users_count }} user(s) require verification.</p>
+                    </div>
+                </div>
+            </a>
+            {% endif %}
+
+            {% if recent_bids_count > 0 %}
+            <a href="/dashboard/bids-management/" class="block p-3 rounded-xl border border-transparent hover:border-emerald-100 hover:bg-emerald-50/50 transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-slate-900">New Bids Placed</p>
+                        <p class="text-xs text-slate-500 mt-0.5">{{ recent_bids_count }} bid(s) submitted in the last 24 hrs.</p>
+                    </div>
+                </div>
+            </a>
+            {% endif %}
+
+            {% if not has_alerts %}
+            <div class="p-6 text-center flex flex-col items-center justify-center space-y-2 cursor-default">
+                <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-slate-700">You're all caught up!</p>
+                    <p class="text-[11px] text-slate-500">No pending alerts at the moment.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

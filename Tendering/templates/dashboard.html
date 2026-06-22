@@ -1,377 +1,379 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="p-8 max-w-[1600px] mx-auto space-y-8">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+<div class="p-4 md:p-8 max-w-[1600px] mx-auto space-y-8">
+    
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Platform Management Workspace</h1>
-            <p class="text-sm text-slate-500 mt-1">Review registrations, moderate tender publications, and track completed contracts.</p>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">System Overview</h1>
+            <p class="text-sm text-slate-500 mt-1">Review registrations, moderate publications, and analyze metrics.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 shadow-sm flex items-center gap-2">
+                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                {% now "F j, Y" %}
+            </span>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
-        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-5">
-            <div class="p-3.5 bg-blue-50 text-blue-600 rounded-xl">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A2.25 2.25 0 0 1 12.75 21.5h-1.5a2.25 2.25 0 0 1-2.25-2.263V19.13m4.786-3.074A12.181 12.181 0 0 0 11 15.69m4.786-3.074A9 9 0 1 0 3.938 12.07M11 15.69a9.39 9.39 0 0 1-2.625.372 9.337 9.337 0 0 1-4.121-.952 4.125 4.125 0 0 1 7.533-2.493M11 15.69v-.003c0-1.113.285-2.16.786-3.07M11 15.69v.109A2.25 2.25 0 0 1 8.75 21.5h-1.5a2.25 2.25 0 0 1-2.25-2.263V19.13m4.786-3.074A12.185 12.185 0 0 1 11 15.69Z" />
-                </svg>
-            </div>
-            <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Users</p>
-                <p class="text-3xl font-bold text-slate-950 mt-1">{{ metrics.total_users }}</p>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-5">
-            <div class="p-3.5 bg-amber-50 text-amber-600 rounded-xl">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                </svg>
-            </div>
-            <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Unverified</p>
-                <p class="text-3xl font-bold text-slate-950 mt-1">{{ metrics.unverified_users }}</p>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-5">
-            <div class="p-3.5 bg-emerald-50 text-emerald-600 rounded-xl">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                </svg>
-            </div>
-            <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Tenders</p>
-                <p class="text-3xl font-bold text-slate-950 mt-1">{{ metrics.total_tenders }}</p>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-5">
-            <div class="p-3.5 bg-violet-50 text-violet-600 rounded-xl">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.375m1.875-12h-9.75C3.712 3 3 3.712 3 4.625v14.75C3 20.288 3.712 21 4.625 21h14.75c.913 0 1.625-.712 1.625-1.625V8.25m-4.5-5.25L19.5 8.25m-4.5-5.25v5.25c0 .414.336.75.75.75h5.25m-8.46-1.802A3 3 0 1 1 12 3.024M7.5 20.25a3 3 0 0 0 3-3V15a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v2.25a3 3 0 0 0 3 3h1.5Z" />
-                </svg>
-            </div>
-            <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Bids</p>
-                <p class="text-3xl font-bold text-slate-950 mt-1">{{ metrics.total_bids }}</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-            <h3 class="text-lg font-semibold text-slate-900 tracking-tight mb-6">Tenders by Category</h3>
-            <div id="categoryChart"></div>
-        </div>
-        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-            <h3 class="text-lg font-semibold text-slate-900 tracking-tight mb-6">Bid Status Distribution</h3>
-            <div id="statusChart"></div>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div class="px-6 py-5 border-b border-slate-100">
-            <h3 class="text-lg font-semibold text-slate-900 tracking-tight">Bids Pending Review</h3>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b border-slate-100 bg-slate-50/55 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        <th class="py-4 px-6">Tender Target</th>
-                        <th class="py-4 px-6">Bidder Profile</th>
-                        <th class="py-4 px-6">Proposal Details</th>
-                        <th class="py-4 px-6">Offered Price</th>
-                        <th class="py-4 px-6 text-right">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
-                    {% for pending_bid in pending_bids %}
-                    <tr class="hover:bg-slate-50/30 transition">
-                        <td class="py-4 px-6">
-                            <p class="font-semibold text-slate-900">{{ pending_bid.tender.title }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">Tender ID: {{ pending_bid.tender.id }}</p>
-                        </td>
-                        <td class="py-4 px-6">
-                            <p class="font-medium text-slate-900">{{ pending_bid.user.email }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">{{ pending_bid.company_name }}</p>
-                        </td>
-                        <td class="py-4 px-6">
-                            <p class="font-medium text-slate-900">{{ pending_bid.title }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">Duration: {{ pending_bid.estimated_duration }}</p>
-                        </td>
-                        <td class="py-4 px-6 font-bold text-slate-900">
-                            {{ pending_bid.total_price }} {{ pending_bid.tender.currency.code }}
-                        </td>
-                        <td class="py-4 px-6 text-right">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
-                                Awaiting Tender Owner Decision
-                            </span>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="py-10 text-center text-slate-400 font-medium">No pending bids submitted for review.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div class="px-6 py-5 border-b border-slate-100">
-            <h3 class="text-lg font-semibold text-slate-900 tracking-tight">Awarded Contracts</h3>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b border-slate-100 bg-slate-50/55 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        <th class="py-4 px-6">Tender Details</th>
-                        <th class="py-4 px-6">Client</th>
-                        <th class="py-4 px-6">Winning Bid</th>
-                        <th class="py-4 px-6">Bidder Contact</th>
-                        <th class="py-4 px-6 text-right">Value</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
-                    {% for bid in awarded_bids %}
-                    <tr class="hover:bg-slate-50/30 transition">
-                        <td class="py-4 px-6">
-                            <p class="font-semibold text-slate-900">{{ bid.tender.title }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">ID: {{ bid.tender.id }}</p>
-                        </td>
-                        <td class="py-4 px-6 text-slate-600">{{ bid.tender.user.email }}</td>
-                        <td class="py-4 px-6">
-                            <p class="font-medium text-slate-900">{{ bid.title }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">{{ bid.company_name }}</p>
-                        </td>
-                        <td class="py-4 px-6">
-                            <p class="text-slate-900 font-medium">{{ bid.contact_person }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">{{ bid.contact_email }}</p>
-                        </td>
-                        <td class="py-4 px-6 text-right font-bold text-emerald-600">
-                            {{ bid.total_price }} {{ bid.tender.currency.code }}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="py-10 text-center text-slate-400 font-medium">No finalized contracts found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
-            <div class="px-6 py-5 border-b border-slate-100">
-                <h3 class="text-lg font-semibold text-slate-900 tracking-tight">Pending Tenders Queue</h3>
-            </div>
-            <div class="p-6 space-y-4 flex-1 overflow-y-auto max-h-[600px]">
-                {% for tender in pending_tenders %}
-                <div id="tender-row-{{ tender.id }}" class="border border-slate-200/80 rounded-xl p-5 hover:border-slate-300 transition-all">
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
-                                {{ tender.category.name }}
-                            </span>
-                            <h4 class="font-bold text-slate-900 text-base mt-2">{{ tender.title }}</h4>
-                            <p class="text-xs text-slate-400 mt-1">Submitted by: {{ tender.user.email }}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button 
-                                hx-post="/dashboard/approve-tender/{{ tender.id }}/" 
-                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                hx-target="#tender-row-{{ tender.id }}" 
-                                hx-swap="outerHTML"
-                                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors">
-                                Approve
-                            </button>
-                            <button 
-                                hx-post="/dashboard/reject-tender/{{ tender.id }}/" 
-                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                hx-target="#tender-row-{{ tender.id }}" 
-                                hx-swap="outerHTML"
-                                class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors">
-                                Reject
-                            </button>
-                        </div>
-                    </div>
-
-                    <p class="text-sm text-slate-600 mt-3 line-clamp-3 leading-relaxed">{{ tender.description }}</p>
-
-                    <div class="grid grid-cols-2 gap-4 mt-4 py-3 px-4 bg-slate-50 rounded-xl text-xs text-slate-600">
-                        <div>
-                            <p class="text-slate-400">Budget Range</p>
-                            <p class="font-semibold text-slate-900 mt-0.5">{{ tender.budget_min }} - {{ tender.budget_max }} {{ tender.currency.code }}</p>
-                        </div>
-                        <div>
-                            <p class="text-slate-400">Submission Deadline</p>
-                            <p class="font-semibold text-slate-900 mt-0.5">{{ tender.deadline|date:"Y-m-d H:i" }}</p>
-                        </div>
-                    </div>
-
-                    {% if tender.attachments.all %}
-                    <div class="mt-4 border-t border-slate-100 pt-3">
-                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Attachments ({{ tender.attachments.count }})</p>
-                        <div class="space-y-1.5">
-                            {% for att in tender.attachments.all %}
-                            <a href="{{ att.file.url }}" download class="flex items-center justify-between p-2 rounded-lg bg-slate-100/70 hover:bg-slate-200/50 text-xs text-slate-600 transition">
-                                <span class="truncate font-medium pr-4">{{ att.file.name }}</span>
-                                <span class="shrink-0 text-slate-400">Download ({{ att.size }} bytes)</span>
-                            </a>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
+    <!-- KPI Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <div class="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="flex items-center gap-4 relative z-10">
+                <div class="p-3.5 bg-blue-100 text-blue-600 rounded-xl"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A2.25 2.25 0 0 1 12.75 21.5h-1.5a2.25 2.25 0 0 1-2.25-2.263V19.13m4.786-3.074A12.181 12.181 0 0 0 11 15.69m4.786-3.074A9 9 0 1 0 3.938 12.07M11 15.69a9.39 9.39 0 0 1-2.625.372 9.337 9.337 0 0 1-4.121-.952 4.125 4.125 0 0 1 7.533-2.493M11 15.69v-.003c0-1.113.285-2.16.786-3.07M11 15.69v.109A2.25 2.25 0 0 1 8.75 21.5h-1.5a2.25 2.25 0 0 1-2.25-2.263V19.13m4.786-3.074A12.185 12.185 0 0 1 11 15.69Z" /></svg></div>
+                <div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Users</p>
+                    <p class="text-2xl font-extrabold text-slate-900 mt-1">{{ metrics.total_users }}</p>
                 </div>
-                {% empty %}
-                <div class="py-12 text-center text-slate-400 font-medium">No pending tenders awaiting approval.</div>
-                {% endfor %}
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
-            <div class="px-6 py-5 border-b border-slate-100">
-                <h3 class="text-lg font-semibold text-slate-900 tracking-tight">Pending User Verification</h3>
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <div class="absolute right-0 top-0 w-24 h-24 bg-rose-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="flex items-center gap-4 relative z-10">
+                <div class="p-3.5 bg-rose-100 text-rose-600 rounded-xl"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg></div>
+                <div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Unverified Accounts</p>
+                    <p class="text-2xl font-extrabold text-slate-900 mt-1">{{ metrics.unverified_users }}</p>
+                </div>
             </div>
-            <div class="p-6 space-y-6 overflow-y-auto max-h-[800px]">
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="flex items-center gap-4 relative z-10">
+                <div class="p-3.5 bg-emerald-100 text-emerald-600 rounded-xl"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg></div>
+                <div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Tenders</p>
+                    <p class="text-2xl font-extrabold text-slate-900 mt-1">{{ metrics.total_tenders }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <div class="absolute right-0 top-0 w-24 h-24 bg-violet-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="flex items-center gap-4 relative z-10">
+                <div class="p-3.5 bg-violet-100 text-violet-600 rounded-xl"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.375m1.875-12h-9.75C3.712 3 3 3.712 3 4.625v14.75C3 20.288 3.712 21 4.625 21h14.75c.913 0 1.625-.712 1.625-1.625V8.25m-4.5-5.25L19.5 8.25m-4.5-5.25v5.25c0 .414.336.75.75.75h5.25m-8.46-1.802A3 3 0 1 1 12 3.024M7.5 20.25a3 3 0 0 0 3-3V15a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v2.25a3 3 0 0 0 3 3h1.5Z" /></svg></div>
+                <div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Bids</p>
+                    <p class="text-2xl font-extrabold text-slate-900 mt-1">{{ metrics.total_bids }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Actionable Grid (Pending Verifications & Tenders) -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        
+        <!-- Action required: Pending Users -->
+        <div class="bg-white rounded-2xl border border-rose-200 shadow-sm flex flex-col h-[650px] overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
+                    <h3 class="text-lg font-bold text-slate-900 tracking-tight">Pending Verification</h3>
+                </div>
+                <span class="px-2.5 py-1 text-xs font-bold bg-rose-100 text-rose-700 rounded-full">{{ pending_users|length }} req</span>
+            </div>
+            
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1 bg-white">
                 {% for pending_user in pending_users %}
-                <div id="user-row-{{ pending_user.id }}" class="border border-slate-200/80 rounded-2xl p-6 hover:border-slate-300 transition-all space-y-6">
-                    <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
-                        <div>
-                            <h4 class="font-bold text-slate-900 text-lg">
-                                {% if pending_user.first_name or pending_user.last_name %}
-                                    {{ pending_user.first_name }} {{ pending_user.last_name }}
-                                {% else %}
-                                    {{ pending_user.username }}
-                                {% endif %}
-                            </h4>
-                            <p class="text-sm text-slate-400 mt-1">Username: {{ pending_user.username }}</p>
+                <div id="user-row-{{ pending_user.id }}" class="border border-slate-200 rounded-xl p-5 hover:border-slate-300 hover:shadow-md transition-all shadow-sm">
+                    <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-4 mb-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-lg font-bold text-slate-500 shrink-0">
+                                {{ pending_user.username|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-base">
+                                    {% if pending_user.first_name %}{{ pending_user.first_name }} {{ pending_user.last_name }}{% else %}{{ pending_user.username }}{% endif %}
+                                </h4>
+                                <p class="text-sm text-slate-500">{{ pending_user.email }}</p>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-2">
+                        
+                        <!-- UPDATED BUTTONS WITH USER DETAILS MODAL -->
+                        <div class="flex flex-col sm:flex-row gap-2 shrink-0">
+                            <!-- Details Button -->
+                            <button 
+                                hx-get="/dashboard/users-management/{{ pending_user.id }}/details/" 
+                                hx-target="#modal-container"
+                                class="bg-white border border-blue-200 hover:bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                                Details
+                            </button>
+                            
                             <button 
                                 hx-post="/dashboard/verify-user/{{ pending_user.id }}/" 
-                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                                 hx-target="#user-row-{{ pending_user.id }}" 
-                                hx-swap="outerHTML"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold transition-colors">
-                                Verify Profile
+                                hx-swap="outerHTML" 
+                                class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition">
+                                Verify
                             </button>
+                            
                             <button 
                                 hx-post="/dashboard/reject-user/{{ pending_user.id }}/" 
-                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                                 hx-target="#user-row-{{ pending_user.id }}" 
-                                hx-swap="outerHTML"
-                                class="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold transition-colors">
+                                hx-swap="outerHTML" 
+                                class="bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
                                 Reject
                             </button>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="space-y-4">
-                            <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Information</h5>
-                            <div class="grid grid-cols-2 gap-y-4 gap-x-6 text-xs leading-relaxed">
-                                <div>
-                                    <p class="text-slate-400">Email Address</p>
-                                    <p class="font-semibold text-slate-900 mt-0.5">{{ pending_user.email }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400">Phone Number</p>
-                                    <p class="font-semibold text-slate-900 mt-0.5">{{ pending_user.phone|default:"Not Provided" }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400">Gender</p>
-                                    <p class="font-semibold text-slate-900 mt-0.5">{{ pending_user.gender|default:"Not Provided" }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400">Birth Date</p>
-                                    <p class="font-semibold text-slate-900 mt-0.5">{{ pending_user.birth_date|date:"Y-m-d"|default:"Not Provided" }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400">User CR Number</p>
-                                    <p class="font-semibold text-slate-900 mt-0.5">{{ pending_user.cr_number|default:"Not Provided" }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400">Date Joined</p>
-                                    <p class="font-semibold text-slate-900 mt-0.5">{{ pending_user.date_joined|date:"Y-m-d H:i" }}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {% if pending_user.company %}
-                        <div class="space-y-4 border-t md:border-t-0 md:border-l border-slate-100 pt-6 md:pt-0 md:pl-8">
-                            <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Company Registry</h5>
-                            <div class="grid grid-cols-2 gap-y-4 gap-x-6 text-xs leading-relaxed">
-                                <div>
-                                    <p class="text-slate-400">Legal Name</p>
-                                    <p class="font-semibold text-slate-900 mt-0.5">{{ pending_user.company.company_name }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400">Company CR Number</p>
-                                    <p class="font-semibold text-slate-900 mt-0.5">{{ pending_user.company.cr_number }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400">Employees Count</p>
-                                    <p class="font-semibold text-slate-900 mt-0.5">{{ pending_user.company.number_of_employees }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400">Annual Revenue</p>
-                                    <p class="font-semibold text-slate-900 mt-0.5">{{ pending_user.company.annual_revenue }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400">Business Sector</p>
-                                    <p class="font-semibold text-slate-900 mt-0.5">{{ pending_user.company.category.name }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400">Corporate Address</p>
-                                    <p class="font-semibold text-slate-900 mt-0.5">
-                                        {{ pending_user.company.location.street }}, {{ pending_user.company.location.city }}, {{ pending_user.company.location.state }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    {% if pending_user.verification_document %}
-                    <div class="border-t border-slate-100 pt-4">
-                        <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Legal Verification Document</h5>
-                        <a href="{{ pending_user.verification_document.url }}" download class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50/50 border border-blue-100 hover:bg-blue-100/50 text-xs font-semibold text-blue-700 transition">
-                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                            </svg>
-                            Download Verification PDF/Image
-                        </a>
+                    {% if pending_user.company %}
+                    <div class="bg-slate-50 rounded-lg p-4 grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4 text-xs border border-slate-100">
+                        <div><p class="text-slate-500">Company</p><p class="font-bold text-slate-900 mt-0.5">{{ pending_user.company.company_name }}</p></div>
+                        <div><p class="text-slate-500">CR Number</p><p class="font-bold text-slate-900 mt-0.5">{{ pending_user.company.cr_number }}</p></div>
+                        <div><p class="text-slate-500">Sector</p><p class="font-bold text-slate-900 mt-0.5">{{ pending_user.company.category.name }}</p></div>
+                        <div><p class="text-slate-500">Revenue</p><p class="font-bold text-slate-900 mt-0.5">{{ pending_user.company.annual_revenue }}</p></div>
                     </div>
                     {% endif %}
                 </div>
                 {% empty %}
-                <div class="py-12 text-center text-slate-400 font-medium">No pending user profiles awaiting verification.</div>
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
+                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <p class="font-medium text-slate-500">All users are verified. Excellent!</p>
+                </div>
                 {% endfor %}
+            </div>
+        </div>
+
+        <!-- Action required: Pending Tenders -->
+        <div class="bg-white rounded-2xl border border-amber-200 shadow-sm flex flex-col h-[650px] overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                    <h3 class="text-lg font-bold text-slate-900 tracking-tight">Tender Moderation Queue</h3>
+                </div>
+                <span class="px-2.5 py-1 text-xs font-bold bg-amber-100 text-amber-700 rounded-full">{{ pending_tenders|length }} req</span>
+            </div>
+            
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1 bg-white">
+                {% for tender in pending_tenders %}
+                <div id="tender-row-{{ tender.id }}" class="border border-slate-200 rounded-xl p-5 hover:border-slate-300 hover:shadow-md transition-all shadow-sm">
+                    <div class="flex justify-between items-start gap-4">
+                        <div>
+                            <span class="inline-block px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded">{{ tender.category.name }}</span>
+                            <h4 class="font-bold text-slate-900 text-base mt-2">{{ tender.title }}</h4>
+                            <p class="text-xs text-slate-500 mt-1">Submitted by: <span class="font-medium text-slate-700">{{ tender.user.email }}</span></p>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row gap-2 shrink-0">
+                            <!-- Details Button -->
+                            <button 
+                                hx-get="/dashboard/tenders-management/{{ tender.id }}/details/" 
+                                hx-target="#modal-container"
+                                class="bg-white border border-blue-200 hover:bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                                Details
+                            </button>
+                            
+                            <button 
+                                hx-post="/dashboard/approve-tender/{{ tender.id }}/" 
+                                hx-target="#tender-row-{{ tender.id }}" 
+                                hx-swap="outerHTML" 
+                                class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition">
+                                Approve
+                            </button>
+                            
+                            <button 
+                                hx-post="/dashboard/reject-tender/{{ tender.id }}/" 
+                                hx-target="#tender-row-{{ tender.id }}" 
+                                hx-swap="outerHTML" 
+                                class="bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                                Reject
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <p class="text-sm text-slate-600 mt-4 line-clamp-2 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">{{ tender.description }}</p>
+                    
+                    <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100 text-xs">
+                        <div><p class="text-slate-500 mb-1">Budget Range</p><p class="font-bold text-slate-900">{{ tender.budget_min }} - {{ tender.budget_max }} <span class="text-slate-500 font-medium">{{ tender.currency.code }}</span></p></div>
+                        <div><p class="text-slate-500 mb-1">Submission Deadline</p><p class="font-bold text-slate-900">{{ tender.deadline|date:"M j, Y" }}</p></div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
+                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    </div>
+                    <p class="font-medium text-slate-500">No tenders pending approval.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="mb-4">
+                <h3 class="text-lg font-bold text-slate-900 tracking-tight">Tenders by Category</h3>
+                <p class="text-sm text-slate-500">Distribution of active platform tenders</p>
+            </div>
+            <div id="categoryChart" class="mt-4"></div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+            <div class="mb-4">
+                <h3 class="text-lg font-bold text-slate-900 tracking-tight">Overall Bid Health</h3>
+                <p class="text-sm text-slate-500">Current status of all submitted bids</p>
+            </div>
+            <div id="statusChart" class="mt-4 flex-1 flex items-center justify-center"></div>
+        </div>
+    </div>
+
+    <!-- Historical Data Tables -->
+    <div class="space-y-8">
+        <!-- Review Bids Table -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="text-lg font-bold text-slate-900 tracking-tight">Bids Pending Client Decision</h3>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar max-h-[400px]">
+                <table class="w-full text-left border-collapse whitespace-nowrap">
+                    <thead class="sticky top-0 bg-slate-50 shadow-sm ring-1 ring-slate-100 z-10">
+                        <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="py-4 px-6">Tender Details</th>
+                            <th class="py-4 px-6">Bidder Information</th>
+                            <th class="py-4 px-6">Estimated Duration</th>
+                            <th class="py-4 px-6 text-right">Price Proposal</th>
+                            <th class="py-4 px-6 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm">
+                        {% for pending_bid in pending_bids %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="py-4 px-6">
+                                <p class="font-bold text-slate-900">{{ pending_bid.tender.title }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Tender #{{ pending_bid.tender.id }}</p>
+                            </td>
+                            <td class="py-4 px-6">
+                                <p class="font-bold text-slate-900">{{ pending_bid.company_name }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">{{ pending_bid.user.email }}</p>
+                            </td>
+                            <td class="py-4 px-6 text-slate-600">{{ pending_bid.estimated_duration }}</td>
+                            <td class="py-4 px-6 text-right">
+                                <span class="font-bold text-slate-900">{{ pending_bid.total_price }}</span>
+                                <span class="text-xs font-semibold text-slate-500">{{ pending_bid.tender.currency.code }}</span>
+                            </td>
+                            <td class="py-4 px-6 text-right">
+                                <button 
+                                    hx-get="/dashboard/bids-management/{{ pending_bid.id }}/details/" 
+                                    hx-target="#modal-container"
+                                    class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors">
+                                    Details
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="py-12 text-center">
+                                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-50 mb-3">
+                                    <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <p class="text-slate-500 font-medium">No pending bids currently awaiting decision.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Awarded Contracts Table -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="text-lg font-bold text-slate-900 tracking-tight">Successfully Awarded Contracts</h3>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar max-h-[400px]">
+                <table class="w-full text-left border-collapse whitespace-nowrap">
+                    <thead class="sticky top-0 bg-slate-50 shadow-sm ring-1 ring-slate-100 z-10">
+                        <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="py-4 px-6">Tender Focus</th>
+                            <th class="py-4 px-6">Client Email</th>
+                            <th class="py-4 px-6">Winning Agency</th>
+                            <th class="py-4 px-6 text-right">Contract Value</th>
+                            <th class="py-4 px-6 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm">
+                        {% for bid in awarded_bids %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="py-4 px-6">
+                                <p class="font-bold text-slate-900">{{ bid.tender.title }}</p>
+                            </td>
+                            <td class="py-4 px-6 text-slate-600">{{ bid.tender.user.email }}</td>
+                            <td class="py-4 px-6">
+                                <p class="font-bold text-slate-900">{{ bid.company_name }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">{{ bid.contact_person }}</p>
+                            </td>
+                            <td class="py-4 px-6 text-right">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full font-bold border border-emerald-200/50">
+                                    {{ bid.total_price }} {{ bid.tender.currency.code }}
+                                </span>
+                            </td>
+                            <td class="py-4 px-6 text-right">
+                                <button 
+                                    hx-get="/dashboard/bids-management/{{ bid.id }}/details/" 
+                                    hx-target="#modal-container"
+                                    class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors">
+                                    Details
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="py-12 text-center">
+                                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-50 mb-3">
+                                    <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                </div>
+                                <p class="text-slate-500 font-medium">No awarded contracts recorded yet.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
+<!-- ApexCharts Script Initialization -->
 <script>
-    const categoryOptions = {
-        chart: { type: 'bar', height: 350 },
-        series: [{ data: {{ chart_data.category_counts|safe }} }],
-        xaxis: { categories: {{ chart_data.category_names|safe }} },
-        colors: ['#3b82f6']
-    };
-    new ApexCharts(document.querySelector("#categoryChart"), categoryOptions).render();
+    document.addEventListener("DOMContentLoaded", function() {
+        const categoryOptions = {
+            chart: { type: 'bar', height: 320, toolbar: { show: false }, fontFamily: 'Plus Jakarta Sans, sans-serif' },
+            series: [{ name: 'Tenders', data: {{ chart_data.category_counts|safe }} }],
+            xaxis: { categories: {{ chart_data.category_names|safe }}, axisBorder: { show: false }, axisTicks: { show: false } },
+            plotOptions: { bar: { borderRadius: 6, columnWidth: '45%' } },
+            colors: ['#2563eb'],
+            grid: { strokeDashArray: 4, yaxis: { lines: { show: true } } },
+            dataLabels: { enabled: false }
+        };
+        
+        const categoryChartElement = document.querySelector("#categoryChart");
+        if (categoryChartElement) {
+            new ApexCharts(categoryChartElement, categoryOptions).render();
+        }
 
-    const statusOptions = {
-        chart: { type: 'donut', height: 350 },
-        series: {{ chart_data.status_counts|safe }},
-        labels: {{ chart_data.status_names|safe }},
-        colors: ['#10b981', '#ef4444', '#f59e0b']
-    };
-    new ApexCharts(document.querySelector("#statusChart"), statusOptions).render();
+        const statusOptions = {
+            chart: { type: 'donut', height: 320, fontFamily: 'Plus Jakarta Sans, sans-serif' },
+            series: {{ chart_data.status_counts|safe }},
+            labels: {{ chart_data.status_names|safe }},
+            colors: ['#10b981', '#f59e0b', '#ef4444', '#64748b'],
+            stroke: { width: 0 },
+            dataLabels: { enabled: false },
+            legend: { position: 'bottom', markers: { radius: 12 } },
+            plotOptions: { pie: { donut: { size: '75%' } } }
+        };
+        
+        const statusChartElement = document.querySelector("#statusChart");
+        if (statusChartElement) {
+            new ApexCharts(statusChartElement, statusOptions).render();
+        }
+    });
 </script>
 {% endblock %}

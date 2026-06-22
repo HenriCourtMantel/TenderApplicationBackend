@@ -3,46 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tendering Platform Administration</title>
+    <title>Admin Workspace | Tender Core</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        /* Modern Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 antialiased" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-    <div class="flex h-screen overflow-hidden">
-        <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-20 shrink-0">
-            <div class="h-16 flex items-center px-6 border-b border-slate-800">
-                <span class="text-white font-bold tracking-tight text-lg">TENDER CORE</span>
+<body class="bg-slate-50 text-slate-900 antialiased overflow-hidden flex h-screen" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 flex flex-col z-20 shrink-0 text-slate-300">
+        <!-- Logo -->
+        <div class="h-16 flex items-center px-6 border-b border-slate-800 bg-slate-950/50">
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-blue-500/20">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
             </div>
-            <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-                <a href="/dashboard/" class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl bg-blue-600 text-white transition-all">
-                    <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
-                    </svg>
-                    Dashboard
-                </a>
-            </nav>
-            <div class="p-4 border-t border-slate-800">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-sm font-semibold text-white">
-                        {{ request.user.email|slice:":2"|upper }}
+            <span class="text-white font-bold tracking-wide text-lg">TenderCore</span>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 px-4 py-6 space-y-1 custom-scrollbar overflow-y-auto">
+            <p class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Overview</p>
+            <a href="/dashboard/" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg bg-blue-600/10 text-blue-400 transition-all">
+                <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" /></svg>
+                Dashboard
+            </a>
+            
+<p class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6">Management</p>
+
+<!-- Users Link -->
+<a href="/dashboard/users/" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 hover:text-white transition-all">
+    <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A2.25 2.25 0 0 1 12.75 21.5h-1.5a2.25 2.25 0 0 1-2.25-2.263V19.13m4.786-3.074A12.181 12.181 0 0 0 11 15.69m4.786-3.074A9 9 0 1 0 3.938 12.07M11 15.69a9.39 9.39 0 0 1-2.625.372 9.337 9.337 0 0 1-4.121-.952 4.125 4.125 0 0 1 7.533-2.493M11 15.69v-.003c0-1.113.285-2.16.786-3.07M11 15.69v.109A2.25 2.25 0 0 1 8.75 21.5h-1.5a2.25 2.25 0 0 1-2.25-2.263V19.13m4.786-3.074A12.185 12.185 0 0 1 11 15.69Z" /></svg> 
+    Users & Companies
+</a>
+<!-- Tenders Link -->
+<a href="/dashboard/tenders-management/" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 hover:text-white transition-all">
+    <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg> 
+    Tenders Directory
+</a>
+<a href="/dashboard/bids-management/" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-slate-800 hover:text-white transition-all">
+    <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125v-9M10.125 2.25h.375a9 9 0 0 1 9 9v.375M10.125 2.25A3.375 3.375 0 0 1 13.5 5.625v1.5c0 .621.504 1.125 1.125 1.125h1.5a3.375 3.375 0 0 1 3.375 3.375M9 15l2.25 2.25L15 12" />
+    </svg>
+    Bids Directory
+</a>
+        </nav>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="flex-1 flex flex-col min-w-0 bg-slate-50">
+        <!-- Top Header -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10 shrink-0">
+            <div class="flex items-center text-sm text-slate-500">
+                <span class="font-medium text-slate-900">Dashboard</span>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <!-- Notifications -->
+                <button class="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" /></svg>
+                    {% if metrics.unverified_users > 0 or pending_tenders.count > 0 %}
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+                    {% endif %}
+                </button>
+                
+                <!-- Admin Profile -->
+                <div class="flex items-center gap-3 pl-6 border-l border-slate-200 cursor-pointer">
+                    <div class="text-right hidden md:block">
+                        <p class="text-sm font-bold text-slate-900">{{ request.user.username }}</p>
+                        <p class="text-xs text-slate-500">Platform Administrator</p>
                     </div>
-                    <div class="truncate">
-                        <p class="text-sm font-medium text-white truncate">{{ request.user.username }}</p>
-                        <p class="text-xs text-slate-400 truncate">{{ request.user.email }}</p>
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold text-white shadow-sm">
+                        {{ request.user.email|slice:":2"|upper }}
                     </div>
                 </div>
             </div>
-        </aside>
-        <main class="flex-1 overflow-y-auto bg-slate-50 relative focus:outline-none">
+        </header>
+
+        <!-- Main Scrollable Area -->
+        <main class="flex-1 overflow-y-auto custom-scrollbar relative">
             {% block content %}{% endblock %}
         </main>
     </div>
+    <div id="modal-container"></div>
 </body>
 </html>
