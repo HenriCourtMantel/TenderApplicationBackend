@@ -77,11 +77,10 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
     def get_queryset(self):
         if self.request.user.is_staff:
-            return User.objects.all()
-        return User.objects.filter(id=self.request.user.id)
+            return User.objects.select_related('company').all()
+        return User.objects.select_related('company').filter(id=self.request.user.id)
 
     filter_backends = [
         filters.SearchFilter,

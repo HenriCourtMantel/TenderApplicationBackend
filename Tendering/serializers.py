@@ -73,24 +73,24 @@ class StatusSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    company_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = '__all__'
-
         extra_kwargs = {
             'password': {'write_only': True}
         }
 
+    def get_company_name(self, obj):
+        if obj.company:
+            return obj.company.company_name
+        return "No Company"
+
     def create(self, validated_data):
         user = User(**validated_data)
-
-        user.set_password(
-            validated_data['password']
-        )
-
+        user.set_password(validated_data['password'])
         user.save()
-
         return user
 
 
