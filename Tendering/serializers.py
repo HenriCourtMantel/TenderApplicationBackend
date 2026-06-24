@@ -5,6 +5,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from django.db.models import Q
 from .models import *
 from django.utils import timezone
+from django.db import transaction
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = User.EMAIL_FIELD  # tells Simple JWT to use email
@@ -72,25 +73,71 @@ class StatusSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+
 class UserSerializer(serializers.ModelSerializer):
-    company_name = serializers.SerializerMethodField()
+    company_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    category_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = '__all__'
+        fields = [
+            'id', 'email', 'phone', 'gender', 'birth_date', 'cr_number', 
+            'first_name', 'last_name', 'password', 'username',
+            'company_name', 'category_name', 'is_verified'
+        ]
         extra_kwargs = {
             'password': {'write_only': True}
         }
+        read_only_fields = ['is_verified']
 
-    def get_company_name(self, obj):
-        if obj.company:
-            return obj.company.company_name
-        return "No Company"
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.company:
+            representation['company_name'] = instance.company.company_name
+            if instance.company.category:
+                representation['category_name'] = instance.company.category.name
+            else:
+                representation['category_name'] = None
+        else:
+            representation['company_name'] = None
+            representation['category_name'] = None      
+        return representation
 
+    @transaction.atomic 
     def create(self, validated_data):
+        company_name = validated_data.pop('company_name', None)
+        category_name = validated_data.pop('category_name', None)
+        cr_number = validated_data.get('cr_number', '')
+        password = validated_data.pop('password')
+
+        company_instance = None
+
+        if company_name and category_name:
+            location, _ = Location.objects.get_or_create(
+                street="Pending", 
+                city="Pending", 
+                state="Pending"
+            )
+            category, _ = Category.objects.get_or_create(
+                name=category_name,
+                defaults={'description': f'{category_name} category'}
+            )
+            
+            company_instance = Company.objects.create(
+                company_name=company_name,
+                location=location,
+                cr_number=cr_number,
+                category=category,
+                number_of_employees=1,   
+                annual_revenue=0.00       
+            )
+            
         user = User(**validated_data)
-        user.set_password(validated_data['password'])
+        user.set_password(password)
+        if company_instance:
+            user.company = company_instance
         user.save()
+
         return user
 
 
