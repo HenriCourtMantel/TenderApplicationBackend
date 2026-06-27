@@ -53,7 +53,6 @@
             class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border {% if user.is_active %}border-amber-200 text-amber-700 hover:bg-amber-50{% else %}border-emerald-200 text-emerald-700 hover:bg-emerald-50{% endif %}">
             {% if user.is_active %}Suspend{% else %}Activate{% endif %}
         </button>
-        
         <!-- Delete -->
         <button 
             hx-post="/dashboard/users/{{ user.id }}/delete/" 
