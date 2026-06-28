@@ -440,3 +440,35 @@ class OTP(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.code}"
+    
+
+class TenderPayment(models.Model):
+    tender = models.OneToOneField(Tender, on_delete=models.CASCADE)
+
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    payment_method = models.CharField(
+        max_length=20,
+        choices=[
+            ("Visa", "Visa"),
+            ("MasterCard", "MasterCard"),
+            ("PayPal", "PayPal"),
+        ],
+        blank=True
+    )
+
+    payment_status = models.CharField(
+        max_length=20,
+        choices=[
+            ("Pending", "Pending"),
+            ("Paid", "Paid"),
+        ],
+        default="Pending"
+    )
+
+    payment_date = models.DateTimeField(auto_now_add=True)
+
+    payment_reference = models.CharField(
+        max_length=100,
+        blank=True
+    )

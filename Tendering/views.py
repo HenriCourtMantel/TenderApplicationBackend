@@ -11,7 +11,7 @@ from .serializers import *
 from .models import *
 from django.db.models import Count, Avg, Sum, Q
 from .models import User, Tender, Bid, Category, Status
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
@@ -19,6 +19,23 @@ from django.core.mail import send_mail
 from .models import OTP
 from django.conf import settings
 from datetime import timedelta
+from decimal import Decimal
+
+
+def _create_pending_tender_payment(tender, amount=None):
+    fee = Decimal(str(amount or getattr(settings, 'TENDER_PUBLICATION_FEE', '100.00')))
+    payment, created = TenderPayment.objects.get_or_create(
+        tender=tender,
+        defaults={
+            'amount': fee,
+            'payment_status': 'Pending',
+        },
+    )
+    if not created:
+        payment.amount = fee
+        payment.payment_status = 'Pending'
+        payment.save(update_fields=['amount', 'payment_status'])
+    return payment
 
 class EmailTokenObtainPairView(TokenObtainPairView):
     permission_classes = [AllowAny]
@@ -177,18 +194,24 @@ class TenderViewSet(viewsets.ModelViewSet):
     def approve(self, request, pk=None):
         tender = self.get_object()
 
-        tender.is_approved = True
+        tender.is_approved = False
         tender.save()
+
+        _create_pending_tender_payment(tender)
 
         Notification.objects.create(
             recipient=tender.user,
             sender=request.user,
             notification_type='tender_approved',
-            message=f'Your tender "{tender.title}" has been approved.',
+            message=f'Your tender "{tender.title}" has been approved and is waiting for payment before it becomes public.',
             tender_title=tender.title
         )
 
-        return Response({"status": "tender approved"})
+        return Response({
+            "status": "tender approved",
+            "payment_status": "Pending",
+            "message": "Tender is waiting for payment before it becomes public.",
+        })
     
     def destroy(self, request, *args, **kwargs):
         tender = self.get_object()
@@ -199,6 +222,56 @@ class TenderViewSet(viewsets.ModelViewSet):
             )
         super().destroy(request, *args, **kwargs)
         return Response({"status": "tender deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+class TenderPaymentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, tender_id):
+        tender = get_object_or_404(Tender, id=tender_id)
+
+        if tender.user != request.user:
+            return Response(
+                {"error": "You do not own this tender."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        payment = TenderPayment.objects.filter(tender=tender).first()
+        amount = request.data.get('amount', getattr(settings, 'TENDER_PUBLICATION_FEE', '100.00'))
+        payment_method = request.data.get('payment_method', '')
+        payment_reference = request.data.get('payment_reference', '')
+
+        if payment is None:
+            payment = TenderPayment.objects.create(
+                tender=tender,
+                amount=Decimal(str(amount)),
+                payment_method=payment_method,
+                payment_reference=payment_reference,
+                payment_status='Paid',
+            )
+        else:
+            payment.amount = Decimal(str(amount))
+            payment.payment_method = payment_method or payment.payment_method
+            payment.payment_reference = payment_reference or payment.payment_reference
+            payment.payment_status = 'Paid'
+            payment.save()
+
+        tender.is_approved = True
+        tender.save()
+
+        Notification.objects.create(
+            recipient=tender.user,
+            sender=request.user,
+            notification_type='tender_approved',
+            message=f'Your tender "{tender.title}" is now public after payment.',
+            tender_title=tender.title,
+        )
+
+        return Response({
+            "message": "Tender is now public.",
+            "payment_status": payment.payment_status,
+            "tender_id": tender.id,
+        })
+
 
 class BidViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -654,8 +727,9 @@ class ApproveTenderHTMXView(LoginRequiredMixin, View):
             return HttpResponse(status=403)
         try:
             tender = Tender.objects.get(id=tender_id)
-            tender.is_approved = True
+            tender.is_approved = False
             tender.save()
+            _create_pending_tender_payment(tender)
             return render(request, "partials/tender_row_approved.html")
         except Tender.DoesNotExist:
             return HttpResponse(status=404)
@@ -880,3 +954,5 @@ class UserDetailModalView(LoginRequiredMixin, View):
         ).get(id=user_id)
         
         return render(request, "partials/user_detail_modal.html", {"user_obj": user_obj})
+    
+

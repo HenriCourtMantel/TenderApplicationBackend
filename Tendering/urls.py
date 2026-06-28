@@ -30,6 +30,7 @@ urlpatterns = [
     path('bids/<int:bid_id>/reject/', RejectBidView.as_view()),
     path('check-password/', CheckPasswordView.as_view()),
     path('change-password/', ChangePasswordView.as_view()),
+    path('tenders/<int:tender_id>/pay/', TenderPaymentView.as_view(), name='tender-payment'),
     path('dashboard/', AdminDashboardView.as_view(), name='admin_dashboard'),
     path('dashboard/verify-user/<int:user_id>/', VerifyUserHTMXView.as_view(), name='verify_user_htmx'),
     path('dashboard/reject-user/<int:user_id>/', RejectUserHTMXView.as_view(), name='reject_user_htmx'),
