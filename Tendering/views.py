@@ -44,26 +44,29 @@ class RegisterView(APIView):
 
 
 class LogoutView(APIView):
-
+    permission_classes = [IsAuthenticated]  
+    
     def post(self, request):
-
         try:
-
-            refresh_token = request.data["refresh"]
-
+            refresh_token = request.data.get("refresh")
+            
+            if not refresh_token:
+                return Response(
+                    {"error": "Refresh token required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             token = RefreshToken(refresh_token)
-
             token.blacklist()
-
+            
             return Response(
-                "User logged out successfully",
+                {"message": "Logged out successfully"},
                 status=status.HTTP_205_RESET_CONTENT
             )
-
-        except Exception:
-
+            
+        except Exception as e:
             return Response(
-                "User not logged in",
+                {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -136,6 +139,9 @@ class TenderViewSet(viewsets.ModelViewSet):
 
         if user.is_staff:
             return queryset.select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
+        
+        if self.action in ['destroy', 'update', 'partial_update', 'retrieve']:
+            return queryset.filter(user=user).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments', 'bids')
             
         return queryset.filter(
             is_approved=True,
@@ -167,22 +173,32 @@ class TenderViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(tenders, many=True)
         return Response(serializer.data)
         
-@action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
-def approve(self, request, pk=None):
-    tender = self.get_object()
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def approve(self, request, pk=None):
+        tender = self.get_object()
 
-    tender.is_approved = True
-    tender.save()
+        tender.is_approved = True
+        tender.save()
 
-    Notification.objects.create(
-        recipient=tender.user,
-        sender=request.user,
-        notification_type='tender_approved',
-        message=f'Your tender "{tender.title}" has been approved.',
-        tender_title=tender.title
-    )
+        Notification.objects.create(
+            recipient=tender.user,
+            sender=request.user,
+            notification_type='tender_approved',
+            message=f'Your tender "{tender.title}" has been approved.',
+            tender_title=tender.title
+        )
 
-    return Response({"status": "tender approved"})
+        return Response({"status": "tender approved"})
+    
+    def destroy(self, request, *args, **kwargs):
+        tender = self.get_object()
+        if tender.user != request.user and not request.user.is_staff:
+            return Response(
+                {"error": "You do not have permission to delete this tender."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        super().destroy(request, *args, **kwargs)
+        return Response({"status": "tender deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 class BidViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]

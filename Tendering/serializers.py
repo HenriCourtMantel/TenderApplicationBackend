@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 from .models import Location, Category, Company, Tender, Bid, BidDocument, CategoryCompany, CategoryTender, TenderStatusHistory, BidStatusHistory, Status, User, Currency, TenderAttachment, Notification, OTP
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -72,7 +74,12 @@ class StatusSerializer(serializers.ModelSerializer):
         model = Status
         fields = '__all__'
 
-
+def validate_username(value):
+    if value.isdigit():
+        raise serializers.ValidationError("Username cannot be only numbers.")
+    if not re.search(r'[a-zA-Z]', value):
+        raise serializers.ValidationError("Username must contain at least one letter.")
+    return value
 
 class UserSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
@@ -86,7 +93,8 @@ class UserSerializer(serializers.ModelSerializer):
             'company_name', 'category_name', 'is_verified'
         ]
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True},
+            'username': {'validators': [validate_username]},
         }
         read_only_fields = ['is_verified']
 
@@ -247,25 +255,29 @@ class TenderSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        if data['budget_min'] > data['budget_max']:
-            raise serializers.ValidationError(
-                "Min budget cannot exceed max budget"
-            )
+        if 'budget_min' in data and 'budget_max' in data:
+            if data['budget_min'] > data['budget_max']:
+                raise serializers.ValidationError(
+                    "Min budget cannot exceed max budget"
+                )
 
-        if data['deadline'] <= data['start_date']:
-            raise serializers.ValidationError(
-                "Deadline must be after start date"
-            )
+        if 'deadline' in data and 'start_date' in data:
+            if data['deadline'] <= data['start_date']:
+                raise serializers.ValidationError(
+                    "Deadline must be after start date"
+                )
 
-        if data['completion_deadline'] <= data['deadline']:
-            raise serializers.ValidationError(
-                "Completion deadline must be after applying deadline"
-            )
+        if 'completion_deadline' in data and 'deadline' in data:
+            if data['completion_deadline'] <= data['deadline']:
+                raise serializers.ValidationError(
+                    "Completion deadline must be after applying deadline"
+                )
 
-        if data['deadline'] <= timezone.now():
-            raise serializers.ValidationError(
-                "Deadline must be in the future"
-            )
+        if 'deadline' in data:
+            if data['deadline'] <= timezone.now():
+                raise serializers.ValidationError(
+                    "Deadline must be in the future"
+                )
 
         return data
 
