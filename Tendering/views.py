@@ -120,8 +120,6 @@ class UserViewSet(viewsets.ModelViewSet):
 class IsVerifiedUser(BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_verified)
-
-
 class TenderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsVerifiedUser]
     queryset = Tender.objects.all()
@@ -148,6 +146,9 @@ class TenderViewSet(viewsets.ModelViewSet):
         queryset = Tender.objects.all()
         results = self.request.query_params.get('results')
 
+        if user.is_staff:
+            return queryset.select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
+
         if results == 'true':
             return queryset.filter(
                 is_approved=True,
@@ -160,15 +161,21 @@ class TenderViewSet(viewsets.ModelViewSet):
         if self.action in ['destroy', 'update', 'partial_update', 'retrieve']:
             return queryset.filter(user=user).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments', 'bids')
             
+        if self.action == 'retrieve':
+            return queryset.filter(
+                Q(user=user) | Q(is_approved=True)
+            ).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments', 'bids')
+
         return queryset.filter(
             is_approved=True,
             status__name="Open",
             deadline__gt=timezone.now()
-                ).exclude(
-                    user=user
-                ).select_related(
-                    'category', 'currency', 'location', 'status'
-                ).prefetch_related('attachments', 'bids')
+        ).exclude(
+            user=user
+        ).select_related(
+            'category', 'currency', 'location', 'status'
+        ).prefetch_related('attachments', 'bids')
+
     @action(detail=False, methods=['get'], url_path='my-tenders')
     def my_tenders(self, request):
         user = request.user
@@ -193,8 +200,14 @@ class TenderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def approve(self, request, pk=None):
         tender = self.get_object()
-
-        tender.is_approved = False
+        
+        waiting_status, _ = Status.objects.get_or_create(
+            name="Waiting for Payment",
+            defaults={"description": "Tender approved, pending publication payment."}
+        )
+        
+        tender.is_approved = False  
+        tender.status = waiting_status
         tender.save()
 
         _create_pending_tender_payment(tender)
@@ -204,7 +217,8 @@ class TenderViewSet(viewsets.ModelViewSet):
             sender=request.user,
             notification_type='tender_approved',
             message=f'Your tender "{tender.title}" has been approved and is waiting for payment before it becomes public.',
-            tender_title=tender.title
+            tender_title=tender.title,
+            tender=tender
         )
 
         return Response({
@@ -222,7 +236,6 @@ class TenderViewSet(viewsets.ModelViewSet):
             )
         super().destroy(request, *args, **kwargs)
         return Response({"status": "tender deleted"}, status=status.HTTP_204_NO_CONTENT)
-
 class TenderPaymentView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -255,7 +268,13 @@ class TenderPaymentView(APIView):
             payment.payment_status = 'Paid'
             payment.save()
 
+        open_status, _ = Status.objects.get_or_create(
+            name="Open",
+            defaults={"description": "Tender is published and open for bids"}
+        )
+
         tender.is_approved = True
+        tender.status = open_status
         tender.save()
 
         Notification.objects.create(
@@ -271,7 +290,6 @@ class TenderPaymentView(APIView):
             "payment_status": payment.payment_status,
             "tender_id": tender.id,
         })
-
 
 class BidViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -292,15 +310,76 @@ class BidViewSet(viewsets.ModelViewSet):
         user = self.request.user
         received = self.request.query_params.get('received')
         if received == 'true':
-            return Bid.objects.filter(tender__user=user, status__name="Pending").select_related('tender', 'status', 'user').prefetch_related('documents')
+            return Bid.objects.filter(
+                tender__user=user, 
+                status__name="Pending"
+            ).select_related(
+                'tender', 'status', 'user'
+            ).prefetch_related(
+                'documents', 
+                'evaluation_set'  
+            )
         
         if user.is_staff:
-            return Bid.objects.all()
-        return Bid.objects.filter(user=user).select_related('tender', 'status', 'user').prefetch_related('documents')
+            return Bid.objects.all().prefetch_related('evaluation_set')
+            
+        return Bid.objects.filter(user=user).select_related(
+            'tender', 'status', 'user'
+        ).prefetch_related(
+            'documents', 
+            'evaluation_set'
+        )
+
+    def evaluate_bid_automatically(self, bid):
+
+        tender = bid.tender
+        total_price = bid.total_price
+        budget_min = tender.budget_min
+        budget_max = tender.budget_max
+
+        if total_price <= budget_min:
+            price_score = Decimal('70.00')
+        elif total_price >= budget_max:
+            price_score = Decimal('10.00')
+        else:
+            budget_range = budget_max - budget_min
+            if budget_range > 0:
+                ratio = (budget_max - total_price) / budget_range
+                price_score = Decimal('10.00') + (Decimal(str(ratio)) * Decimal('60.00'))
+            else:
+                price_score = Decimal('70.00')
+
+        quality_score = Decimal('0.00')
+        if bid.proposal and len(bid.proposal.strip()) > 50:
+            quality_score += Decimal('10.00')
+        if bid.execution_plan and len(bid.execution_plan.strip()) > 20:
+            quality_score += Decimal('10.00')
+        if bid.deliverables and len(bid.deliverables.strip()) > 20:
+            quality_score += Decimal('10.00')
+
+        total_score = price_score + quality_score
+        
+        if total_score > Decimal('100.00'):
+            total_score = Decimal('100.00')
+        elif total_score < Decimal('0.00'):
+            total_score = Decimal('0.00')
+
+        comments = f"Auto-evaluation: Price score = {price_score:.1f}/70, quality score = {quality_score:.1f}/30."
+
+        Evaluation.objects.update_or_create(
+            bid=bid,
+            defaults={
+                'score': total_score,
+                'comments': comments,
+                'decision': 'Pending'
+            }
+        )
 
     def perform_create(self, serializer):
         pending_status, _ = Status.objects.get_or_create(name="Pending")
         bid = serializer.save(user=self.request.user, status=pending_status)
+
+        self.evaluate_bid_automatically(bid)
 
         Notification.objects.create(
             recipient=bid.tender.user,
@@ -310,6 +389,10 @@ class BidViewSet(viewsets.ModelViewSet):
             tender_title=bid.tender.title,
             bid_title=bid.title
         )
+
+    def perform_update(self, serializer):
+        bid = serializer.save()
+        self.evaluate_bid_automatically(bid)
 
 
 class BidDocumentViewSet(viewsets.ModelViewSet):
@@ -462,15 +545,12 @@ class CheckPasswordView(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-
 class AcceptBidView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, bid_id):
-
         try:
             bid = Bid.objects.get(id=bid_id)
-
         except Bid.DoesNotExist:
             return Response(
                 {"error": "Bid not found"},
@@ -498,17 +578,19 @@ class AcceptBidView(APIView):
         bid.status = awarded_status
         bid.save()
 
-        closed_status, _ =Status.objects.get_or_create(
+        Evaluation.objects.filter(bid=bid).update(decision='Accepted')
+
+        closed_status, _ = Status.objects.get_or_create(
             name="Closed",
             defaults={"description": "Tender closed"}
         )
         bid.tender.status = closed_status
         bid.tender.save()
-        other_bids = Bid.objects.filter(
-            tender=bid.tender
-        ).exclude(id=bid.id)
         
+        other_bids = Bid.objects.filter(tender=bid.tender).exclude(id=bid.id)
         other_bids.update(status=rejected_status)
+
+        Evaluation.objects.filter(bid__in=other_bids).update(decision='Rejected')
 
         Notification.objects.create(
             recipient=bid.user,
@@ -536,15 +618,12 @@ class AcceptBidView(APIView):
             "message": "Bid accepted"
         })
 
-
 class RejectBidView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, bid_id):
-
         try:
             bid = Bid.objects.get(id=bid_id)
-
         except Bid.DoesNotExist:
             return Response(
                 {"error": "Bid not found"},
@@ -572,6 +651,8 @@ class RejectBidView(APIView):
         bid.status = rejected_status
         bid.save()
 
+        Evaluation.objects.filter(bid=bid).update(decision='Rejected')
+
         try:
             Notification.objects.create(
                 recipient=bid.user,
@@ -587,7 +668,6 @@ class RejectBidView(APIView):
         return Response({
             "message": "Bid rejected"
         })
-
 
 class NotificationViewSet(viewsets.ModelViewSet):
 
@@ -659,7 +739,13 @@ class AdminDashboardView(LoginRequiredMixin, View):
         total_bids = Bid.objects.count()
 
         pending_users = User.objects.filter(is_verified=False).select_related('company', 'company__location', 'company__category')
-        pending_tenders = Tender.objects.filter(is_approved=False).select_related('user', 'category', 'currency', 'location', 'status').prefetch_related('attachments')
+        
+        pending_tenders = Tender.objects.filter(
+            is_approved=False
+        ).exclude(
+            status__name="Waiting for Payment"
+        ).select_related('user', 'category', 'currency', 'location', 'status').prefetch_related('attachments')
+        
         awarded_bids = Bid.objects.filter(status__name="Awarded").select_related('tender', 'tender__user', 'tender__currency', 'user')
         pending_bids = Bid.objects.filter(status__name="Pending").select_related('tender', 'tender__currency', 'user')
 
@@ -692,6 +778,7 @@ class AdminDashboardView(LoginRequiredMixin, View):
         return render(request, "dashboard.html", context)
 
 
+
 class VerifyUserHTMXView(LoginRequiredMixin, View):
     def post(self, request, user_id):
         if not request.user.is_staff:
@@ -719,21 +806,36 @@ class RejectUserHTMXView(LoginRequiredMixin, View):
             return HttpResponse("")
         except User.DoesNotExist:
             return HttpResponse(status=404)
-
-
 class ApproveTenderHTMXView(LoginRequiredMixin, View):
     def post(self, request, tender_id):
         if not request.user.is_staff:
             return HttpResponse(status=403)
         try:
             tender = Tender.objects.get(id=tender_id)
-            tender.is_approved = False
+            
+            waiting_status, _ = Status.objects.get_or_create(
+                name="Waiting for Payment",
+                defaults={"description": "Tender approved, pending publication payment."}
+            )
+            
+            tender.is_approved = False  
+            tender.status = waiting_status
             tender.save()
+            
             _create_pending_tender_payment(tender)
-            return render(request, "partials/tender_row_approved.html")
+
+            Notification.objects.create(
+                recipient=tender.user,
+                sender=request.user,
+                notification_type='tender_approved',
+                message=f'Your tender "{tender.title}" has been approved and is waiting for payment before it becomes public.',
+                tender_title=tender.title,
+                tender=tender
+            )
+            
+            return render(request, "partials/tender_row_approved.html", {"tender": tender})
         except Tender.DoesNotExist:
             return HttpResponse(status=404)
-
 
 class RejectTenderHTMXView(LoginRequiredMixin, View):
     def post(self, request, tender_id):

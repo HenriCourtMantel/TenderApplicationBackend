@@ -380,9 +380,7 @@ class BidStatusHistory(models.Model):
     
 
 
-
 class Notification(models.Model):
-
     NOTIFICATION_TYPES = (
         ('new_bid', 'New Bid'),
         ('bid_accepted', 'Bid Accepted'),
@@ -394,7 +392,6 @@ class Notification(models.Model):
         on_delete=models.CASCADE,
         related_name='notifications'
     )
-
     sender = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -402,24 +399,26 @@ class Notification(models.Model):
         null=True,
         blank=True
     )
-
     notification_type = models.CharField(
         max_length=30,
         choices=NOTIFICATION_TYPES
     )
-
     message = models.TextField()
-
     is_read = models.BooleanField(default=False)
-
     created_at = models.DateTimeField(auto_now_add=True)
-
+    
+    tender = models.ForeignKey(
+        Tender, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='notifications'
+    )
     tender_title = models.CharField(max_length=255, default="title")
     bid_title = models.CharField(max_length=255, default="title")
 
     def __str__(self):
         return f"{self.recipient} - {self.notification_type}"
-
 
 class OTP(models.Model):
 
@@ -448,15 +447,15 @@ class TenderPayment(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
 
     payment_method = models.CharField(
-        max_length=20,
+        max_length=50,
         choices=[
+            ("Sham Cash", "Sham Cash"), 
             ("Visa", "Visa"),
             ("MasterCard", "MasterCard"),
             ("PayPal", "PayPal"),
         ],
         blank=True
     )
-
     payment_status = models.CharField(
         max_length=20,
         choices=[

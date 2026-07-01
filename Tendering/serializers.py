@@ -165,7 +165,10 @@ class BidDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = BidDocument
         fields = '__all__'
-
+class EvaluationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Evaluation
+        fields = '__all__'
 class BidSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(
         source='user.username',
@@ -190,6 +193,12 @@ class BidSerializer(serializers.ModelSerializer):
     documents = BidDocumentSerializer(
         many=True, 
         read_only=True
+    )
+
+    evaluations = EvaluationSerializer(
+        many=True,
+        read_only=True,
+        source='evaluation_set'
     )
 
     class Meta:
@@ -231,7 +240,10 @@ class BidSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
-
+class TenderPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TenderPayment
+        fields = ['amount', 'payment_status', 'payment_date', 'payment_method', 'payment_reference']
 class TenderSerializer(serializers.ModelSerializer):
 
     attachments = TenderAttachmentSerializer(
@@ -245,6 +257,8 @@ class TenderSerializer(serializers.ModelSerializer):
     )
     
     is_saved = serializers.SerializerMethodField()
+    
+    payment = serializers.SerializerMethodField()
 
     class Meta:
         model = Tender
@@ -253,6 +267,56 @@ class TenderSerializer(serializers.ModelSerializer):
             'user',
             'is_approved'
         ]
+
+    def to_internal_value(self, data):
+        if 'location' in data:
+            location_val = data['location']
+            
+            if isinstance(location_val, str):
+                city_name = location_val.strip()
+                if not city_name:
+                    city_name = "Default City"
+                
+                location_obj, _ = Location.objects.get_or_create(
+                    city=city_name,
+                    defaults={
+                        'street': 'Pending',
+                        'state': city_name
+                    }
+                )
+                data['location'] = location_obj.id
+                
+            elif isinstance(location_val, int) and (location_val <= 0 or not Location.objects.filter(id=location_val).exists()):
+                location_obj, _ = Location.objects.get_or_create(
+                    city="Default City",
+                    defaults={'street': 'Pending', 'state': 'Default'}
+                )
+                data['location'] = location_obj.id
+
+        if 'status' in data:
+            status_val = data['status']
+            if isinstance(status_val, str):
+                status_name = status_val.strip()
+                status_obj, _ = Status.objects.get_or_create(
+                    name=status_name,
+                    defaults={'description': f'{status_name} status'}
+                )
+                data['status'] = status_obj.id
+            elif isinstance(status_val, int):
+                if not Status.objects.filter(id=status_val).exists():
+                    status_obj, _ = Status.objects.get_or_create(
+                        name="Open",
+                        defaults={'description': 'Default status'}
+                    )
+                    data['status'] = status_obj.id
+
+        return super().to_internal_value(data)
+
+    def get_payment(self, obj):
+        payment = getattr(obj, 'tenderpayment', None)
+        if payment:
+            return TenderPaymentSerializer(payment).data
+        return None
 
     def validate(self, data):
         if 'budget_min' in data and 'budget_max' in data:
@@ -306,20 +370,6 @@ class TenderSerializer(serializers.ModelSerializer):
             
         return representation
 
-    def create(self, validated_data):
-
-        validated_data['user'] = self.context['request'].user
-
-        validated_data['is_approved'] = False
-
-        return super().create(validated_data)
-    
-    def get_is_saved(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return SavedTender.objects.filter(user=request.user, tender=obj).exists()
-        return False
-
 class SavedTenderSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
@@ -336,10 +386,7 @@ class SavedTenderSerializer(serializers.ModelSerializer):
         return saved_tender
 
 
-class EvaluationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Evaluation
-        fields = '__all__'
+
 
 
 class CategoryCompanySerializer(serializers.ModelSerializer):
@@ -366,10 +413,7 @@ class BidStatusHistorySerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 
-class EvaluationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Evaluation
-        fields = '__all__'
+
 
 class NotificationSerializer(serializers.ModelSerializer):
 
