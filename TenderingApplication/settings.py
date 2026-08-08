@@ -107,6 +107,7 @@ WSGI_APPLICATION = 'TenderingApplication.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+FIREBASE_CONFIG_PATH = os.path.join(BASE_DIR, 'core', 'keys', 'serviceAccountKey.json')
 
 DATABASES = {
     'default': {

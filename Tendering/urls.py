@@ -31,6 +31,7 @@ urlpatterns = [
     path('check-password/', CheckPasswordView.as_view()),
     path('change-password/', ChangePasswordView.as_view()),
     path('tenders/<int:tender_id>/pay/', TenderPaymentView.as_view(), name='tender-payment'),
+    path('users/update-fcm/', UpdateFCMTokenView.as_view(), name='update-fcm'),
     path('dashboard/', AdminDashboardView.as_view(), name='admin_dashboard'),
     path('dashboard/verify-user/<int:user_id>/', VerifyUserHTMXView.as_view(), name='verify_user_htmx'),
     path('dashboard/reject-user/<int:user_id>/', RejectUserHTMXView.as_view(), name='reject_user_htmx'),
@@ -39,6 +40,7 @@ urlpatterns = [
     path('send-otp/', SendOTPView.as_view(), name='send-otp'),
     path('verify-otp/', VerifyOTPView.as_view(), name='verify-otp'),
     path('', include(router.urls)),  
+    
     #for dashboard
     path('dashboard/users/', UserManagementView.as_view(), name='admin_users'),
     path('dashboard/tenders-management/', TenderManagementView.as_view(), name='admin_tenders'),

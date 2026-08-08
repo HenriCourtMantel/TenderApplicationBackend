@@ -20,6 +20,7 @@ from .models import OTP
 from django.conf import settings
 from datetime import timedelta
 from decimal import Decimal
+from Tendering.notification_manager import trigger_notification
 
 
 def _create_pending_tender_payment(tender, amount=None):
@@ -65,6 +66,8 @@ class LogoutView(APIView):
     
     def post(self, request):
         try:
+            request.user.fcm_token = None
+            request.user.save(update_fields=['fcm_token'])
             refresh_token = request.data.get("refresh")
             
             if not refresh_token:
@@ -140,14 +143,13 @@ class TenderViewSet(viewsets.ModelViewSet):
         'location__city': ['exact', 'icontains'],
         'location__state': ['exact', 'icontains'],
     }
-
     def get_queryset(self):
         user = self.request.user
         queryset = Tender.objects.all()
         results = self.request.query_params.get('results')
 
         if user.is_staff:
-            return queryset.select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
+            return queryset.select_related('category', 'currency', 'location', 'status').prefetch_related('attachments', 'bids')
 
         if results == 'true':
             return queryset.filter(
@@ -155,12 +157,9 @@ class TenderViewSet(viewsets.ModelViewSet):
                 status__name="Awarded"
             ).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
 
-        if user.is_staff:
-            return queryset.select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
-        
-        if self.action in ['destroy', 'update', 'partial_update', 'retrieve']:
+        if self.action in ['update', 'partial_update', 'destroy']:
             return queryset.filter(user=user).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments', 'bids')
-            
+
         if self.action == 'retrieve':
             return queryset.filter(
                 Q(user=user) | Q(is_approved=True)
@@ -277,12 +276,12 @@ class TenderPaymentView(APIView):
         tender.status = open_status
         tender.save()
 
-        Notification.objects.create(
+        trigger_notification(
             recipient=tender.user,
             sender=request.user,
-            notification_type='tender_approved',
+            n_type='tender_approved',
             message=f'Your tender "{tender.title}" is now public after payment.',
-            tender_title=tender.title,
+            tender=tender
         )
 
         return Response({
@@ -374,20 +373,19 @@ class BidViewSet(viewsets.ModelViewSet):
                 'decision': 'Pending'
             }
         )
-
     def perform_create(self, serializer):
         pending_status, _ = Status.objects.get_or_create(name="Pending")
         bid = serializer.save(user=self.request.user, status=pending_status)
 
         self.evaluate_bid_automatically(bid)
 
-        Notification.objects.create(
+        trigger_notification(
             recipient=bid.tender.user,
             sender=self.request.user,
-            notification_type="new_bid",
+            n_type="new_bid",
             message=f'New bid submitted for "{bid.tender.title}"',
-            tender_title=bid.tender.title,
-            bid_title=bid.title
+            tender=bid.tender,
+            bid=bid
         )
 
     def perform_update(self, serializer):
@@ -545,6 +543,7 @@ class CheckPasswordView(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+
 class AcceptBidView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -592,13 +591,13 @@ class AcceptBidView(APIView):
 
         Evaluation.objects.filter(bid__in=other_bids).update(decision='Rejected')
 
-        Notification.objects.create(
+        trigger_notification(
             recipient=bid.user,
             sender=request.user,
-            notification_type="bid_accepted",
+            n_type="bid_accepted",
             message=f'Your bid for "{bid.tender.title}" was accepted.',
-            tender_title=bid.tender.title,
-            bid_title=bid.title
+            tender=bid.tender,
+            bid=bid
         )
 
         notifications = [
@@ -607,6 +606,7 @@ class AcceptBidView(APIView):
                 sender=request.user,
                 notification_type="bid_rejected",
                 message=f'Your bid for "{bid.tender.title}" was not selected.',
+                tender=bid.tender,
                 tender_title=b.tender.title,
                 bid_title=b.title
             )
@@ -614,10 +614,32 @@ class AcceptBidView(APIView):
         ]
         Notification.objects.bulk_create(notifications)
 
+        for b in other_bids:
+            if hasattr(b.user, 'fcm_token') and b.user.fcm_token:
+                try:
+                    from Tendering.utils.fcm import send_fcm_notification
+                    send_fcm_notification(
+                        token=b.user.fcm_token,
+                        title="TenderingDU",
+                        body=f'Your bid for "{bid.tender.title}" was not selected.',
+                        data={"type": "bid_rejected", "tender_id": str(bid.tender.id), "bid_id": str(b.id)}
+                    )
+                except Exception as e:
+                    print(f"FCM Error for bidder {b.user.id}: {e}")
+
         return Response({
             "message": "Bid accepted"
         })
-
+class UpdateFCMTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        token = request.data.get('fcm_token')
+        if token:
+            request.user.fcm_token = token
+            request.user.save(update_fields=['fcm_token'])
+            return Response({"status": "token updated"}, status=status.HTTP_200_OK)
+        return Response({"error": "No token provided"}, status=status.HTTP_400_BAD_REQUEST)
 class RejectBidView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -654,13 +676,13 @@ class RejectBidView(APIView):
         Evaluation.objects.filter(bid=bid).update(decision='Rejected')
 
         try:
-            Notification.objects.create(
+            trigger_notification(
                 recipient=bid.user,
                 sender=request.user,
-                notification_type="bid_rejected",
+                n_type="bid_rejected",
                 message=f'Your bid for "{bid.tender.title}" was rejected.',
-                tender_title=bid.tender.title,
-                bid_title=bid.title
+                tender=bid.tender,
+                bid=bid
             )
         except Exception as e:
             return Response({"error": str(e)})
@@ -823,16 +845,14 @@ class ApproveTenderHTMXView(LoginRequiredMixin, View):
             tender.save()
             
             _create_pending_tender_payment(tender)
-
-            Notification.objects.create(
+            trigger_notification(
                 recipient=tender.user,
                 sender=request.user,
-                notification_type='tender_approved',
+                n_type='tender_approved',
                 message=f'Your tender "{tender.title}" has been approved and is waiting for payment before it becomes public.',
-                tender_title=tender.title,
                 tender=tender
             )
-            
+
             return render(request, "partials/tender_row_approved.html", {"tender": tender})
         except Tender.DoesNotExist:
             return HttpResponse(status=404)
