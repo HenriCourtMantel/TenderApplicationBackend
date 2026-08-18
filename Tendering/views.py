@@ -154,8 +154,8 @@ class TenderViewSet(viewsets.ModelViewSet):
         if results == 'true':
             return queryset.filter(
                 is_approved=True,
-                status__name="Awarded"
-            ).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments')
+                status__name="Closed" 
+            ).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments', 'bids') # <--- Added 'bids' here
 
         if self.action in ['update', 'partial_update', 'destroy']:
             return queryset.filter(user=user).select_related('category', 'currency', 'location', 'status').prefetch_related('attachments', 'bids')
@@ -289,7 +289,6 @@ class TenderPaymentView(APIView):
             "payment_status": payment.payment_status,
             "tender_id": tender.id,
         })
-
 class BidViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Bid.objects.all()
@@ -328,71 +327,6 @@ class BidViewSet(viewsets.ModelViewSet):
             'documents', 
             'evaluation_set'
         )
-
-    def evaluate_bid_automatically(self, bid):
-
-        tender = bid.tender
-        total_price = bid.total_price
-        budget_min = tender.budget_min
-        budget_max = tender.budget_max
-
-        if total_price <= budget_min:
-            price_score = Decimal('70.00')
-        elif total_price >= budget_max:
-            price_score = Decimal('10.00')
-        else:
-            budget_range = budget_max - budget_min
-            if budget_range > 0:
-                ratio = (budget_max - total_price) / budget_range
-                price_score = Decimal('10.00') + (Decimal(str(ratio)) * Decimal('60.00'))
-            else:
-                price_score = Decimal('70.00')
-
-        quality_score = Decimal('0.00')
-        if bid.proposal and len(bid.proposal.strip()) > 50:
-            quality_score += Decimal('10.00')
-        if bid.execution_plan and len(bid.execution_plan.strip()) > 20:
-            quality_score += Decimal('10.00')
-        if bid.deliverables and len(bid.deliverables.strip()) > 20:
-            quality_score += Decimal('10.00')
-
-        total_score = price_score + quality_score
-        
-        if total_score > Decimal('100.00'):
-            total_score = Decimal('100.00')
-        elif total_score < Decimal('0.00'):
-            total_score = Decimal('0.00')
-
-        comments = f"Auto-evaluation: Price score = {price_score:.1f}/70, quality score = {quality_score:.1f}/30."
-
-        Evaluation.objects.update_or_create(
-            bid=bid,
-            defaults={
-                'score': total_score,
-                'comments': comments,
-                'decision': 'Pending'
-            }
-        )
-    def perform_create(self, serializer):
-        pending_status, _ = Status.objects.get_or_create(name="Pending")
-        bid = serializer.save(user=self.request.user, status=pending_status)
-
-        self.evaluate_bid_automatically(bid)
-
-        trigger_notification(
-            recipient=bid.tender.user,
-            sender=self.request.user,
-            n_type="new_bid",
-            message=f'New bid submitted for "{bid.tender.title}"',
-            tender=bid.tender,
-            bid=bid
-        )
-
-    def perform_update(self, serializer):
-        bid = serializer.save()
-        self.evaluate_bid_automatically(bid)
-
-
 class BidDocumentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = BidDocument.objects.all()

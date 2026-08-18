@@ -3,7 +3,9 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from datetime import timedelta
 import random
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from decimal import Decimal
 class Location(models.Model):
     street = models.CharField('street name', max_length=100)
     city = models.CharField('city name', max_length=40)
@@ -470,4 +472,52 @@ class TenderPayment(models.Model):
     payment_reference = models.CharField(
         max_length=100,
         blank=True
+    )
+    
+
+@receiver(post_save, sender=Bid)
+def auto_evaluate_bid(sender, instance, created, **kwargs):
+    tender = instance.tender
+    total_price = instance.total_price
+    budget_min = tender.budget_min
+    budget_max = tender.budget_max
+    
+    if total_price <= budget_min:
+        price_score = Decimal('70.00')
+    elif total_price >= budget_max:
+        price_score = Decimal('10.00')
+    else:
+        budget_range = budget_max - budget_min
+        if budget_range > 0:
+            ratio = (budget_max - total_price) / budget_range
+            price_score = Decimal('10.00') + (Decimal(str(ratio)) * Decimal('60.00'))
+        else:
+            price_score = Decimal('70.00')
+
+    quality_score = Decimal('0.00')
+    if instance.proposal and len(instance.proposal.strip()) > 50:
+        quality_score += Decimal('10.00')
+    if instance.execution_plan and len(instance.execution_plan.strip()) > 20:
+        quality_score += Decimal('10.00')
+    if instance.deliverables and len(instance.deliverables.strip()) > 20:
+        quality_score += Decimal('10.00')
+        
+    total_score = price_score + quality_score
+    if total_score > Decimal('100.00'):
+        total_score = Decimal('100.00')
+    elif total_score < Decimal('0.00'):
+        total_score = Decimal('0.00')
+        
+    comments = f"Auto-evaluation: Price score = {price_score:.1f}/70, quality score = {quality_score:.1f}/30."
+    
+    existing_eval = Evaluation.objects.filter(bid=instance).first()
+    decision = existing_eval.decision if existing_eval else 'Pending'
+
+    Evaluation.objects.update_or_create(
+        bid=instance,
+        defaults={
+            'score': total_score,
+            'comments': comments,
+            'decision': decision
+        }
     )
