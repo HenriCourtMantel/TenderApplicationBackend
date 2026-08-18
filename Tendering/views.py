@@ -640,6 +640,24 @@ class UpdateFCMTokenView(APIView):
             request.user.save(update_fields=['fcm_token'])
             return Response({"status": "token updated"}, status=status.HTTP_200_OK)
         return Response({"error": "No token provided"}, status=status.HTTP_400_BAD_REQUEST)
+class UserStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        
+        active_tenders_count = Tender.objects.filter(
+            is_approved=True,
+            status__name="Open",
+            deadline__gt=timezone.now()
+        ).exclude(user=user).count()
+
+        applied_bids_count = Bid.objects.filter(user=user).count()
+
+        return Response({
+            "active_tenders": active_tenders_count,
+            "applied_bids": applied_bids_count
+        })
 class RejectBidView(APIView):
     permission_classes = [IsAuthenticated]
 

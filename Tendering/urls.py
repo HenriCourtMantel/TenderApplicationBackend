@@ -31,6 +31,7 @@ urlpatterns = [
     path('check-password/', CheckPasswordView.as_view()),
     path('change-password/', ChangePasswordView.as_view()),
     path('tenders/<int:tender_id>/pay/', TenderPaymentView.as_view(), name='tender-payment'),
+    path('user-stats/', UserStatsView.as_view(), name='user-stats'),
     path('users/update-fcm/', UpdateFCMTokenView.as_view(), name='update-fcm'),
     path('dashboard/', AdminDashboardView.as_view(), name='admin_dashboard'),
     path('dashboard/verify-user/<int:user_id>/', VerifyUserHTMXView.as_view(), name='verify_user_htmx'),

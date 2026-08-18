@@ -3,23 +3,40 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 from django.conf import settings
 
-if not firebase_admin._apps:
-    if os.path.exists(settings.FIREBASE_CONFIG_PATH):
-        try:
-            cred = credentials.Certificate(settings.FIREBASE_CONFIG_PATH)
-            firebase_admin.initialize_app(cred)
-            print("Firebase successfully initialized.")
-        except Exception as e:
-            print(f"Failed to initialize Firebase: {e}")
-    else:
-        print(f"WARNING: Firebase config file not found at {settings.FIREBASE_CONFIG_PATH}. Push notifications will not work.")
+def initialize_firebase():
+    if not firebase_admin._apps:
+        config_path = getattr(settings, 'FIREBASE_CONFIG_PATH', None)
+        print(f"DEBUG: FIREBASE_CONFIG_PATH = {config_path}")
+        
+        if config_path and os.path.exists(config_path):
+            try:
+                cred = credentials.Certificate(config_path)
+                firebase_admin.initialize_app(cred)
+                print(" Firebase successfully initialized!")
+            except Exception as e:
+                print(f" Failed to initialize Firebase: {e}")
+        else:
+            print(f" ERROR: Config file does NOT exist at path: {config_path}")
 
 def send_fcm_notification(token, title, body, data=None):
-    if not token or not firebase_admin._apps:
+    initialize_firebase()
+
+    if not token:
+        print(" FCM ERROR: No token provided!")
         return None
-    message = messaging.Message(
-        notification=messaging.Notification(title=title, body=body),
-        data=data or {},
-        token=token,
-    )
-    return messaging.send(message)
+
+    if not firebase_admin._apps:
+        print(" FCM ERROR: firebase_admin._apps is still empty after initialization!")
+        return None
+
+    try:
+        message = messaging.Message(
+            notification=messaging.Notification(title=title, body=body),
+            data=data or {},
+            token=token,
+        )
+        response = messaging.send(message)
+        return response
+    except Exception as e:
+        print(f" FCM Exception inside messaging.send: {e}")
+        return None
