@@ -239,6 +239,13 @@ class BidSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
+        from .models import Status
+        pending_status, _ = Status.objects.get_or_create(
+            name="Pending",
+            defaults={"description": "Bid is pending review"}
+        )
+        validated_data['status'] = pending_status
+
         return super().create(validated_data)
 class TenderPaymentSerializer(serializers.ModelSerializer):
     class Meta:

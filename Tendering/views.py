@@ -327,6 +327,20 @@ class BidViewSet(viewsets.ModelViewSet):
             'documents', 
             'evaluation_set'
         )
+    def perform_create(self, serializer):
+        bid = serializer.save()
+
+        try:
+            trigger_notification(
+                recipient=bid.tender.user,      
+                sender=self.request.user,         
+                n_type="new_bid",
+                message=f'You have received a new bid for your tender "{bid.tender.title}".',
+                tender=bid.tender,
+                bid=bid
+            )
+        except Exception as e:
+            print(f"Failed to send new bid notification: {e}")
 class BidDocumentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = BidDocument.objects.all()
